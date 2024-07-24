@@ -33,8 +33,8 @@ export default async function Home() {
           className="mx-auto mt-4 flex justify-center text-center"
           href={!session ? "/api/auth/signin" : "/trackable"}
         >
-          <Button className="w-full max-w-[400px] py-6 text-lg">
-            {!session ? "Sign in" : "To dashboard"}
+          <Button className="md:w-auto px-12 w-full py-6 text-lg">
+            {!session ? "Get started" : "To dashboard"}
           </Button>
         </Link>
       </main>
