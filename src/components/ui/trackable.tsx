@@ -4,14 +4,14 @@ import { useState } from "react";
 
 import { api } from "@/trpc/react";
 
-export function LatestPost() {
-  const [latestPost] = api.post.getLatest.useSuspenseQuery();
+export function Trackable() {
+  const [latestPost] = api.track.getLatest.useSuspenseQuery();
 
   const utils = api.useUtils();
   const [name, setName] = useState("");
-  const createPost = api.post.create.useMutation({
+  const createPost = api.track.create.useMutation({
     onSuccess: async () => {
-      await utils.post.invalidate();
+      await utils.track.invalidate();
       setName("");
     },
   });
