@@ -7,7 +7,7 @@ export const Header = async () => {
   const session = await getServerAuthSession();
 
   return (
-    <header className="bg-white flex items-center justify-between p-2 lg:px-8 border-b border-b-slate-200">
+    <header className="flex items-center justify-between p-2 lg:px-8 border-b border-b-slate-200">
       <Link href="/" className="flex items-center gap-1">
         <Image
           src="https://www.svgrepo.com/show/532054/hurricane-alt-1.svg"

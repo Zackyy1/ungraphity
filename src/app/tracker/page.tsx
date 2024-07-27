@@ -1,8 +1,15 @@
 import { Button } from "@/components/ui/button";
 import { Heading } from "@/components/ui/heading";
+import { getServerAuthSession } from "@/server/auth";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
-export default function TrackerDefaultPage() {
+export default async function TrackerDefaultPage() {
+  const session = await getServerAuthSession();
+
+  if (!session) {
+    redirect("/");
+  }
   return (
     <div className="flex h-screen flex-col items-center">
       <Heading className="text-center">

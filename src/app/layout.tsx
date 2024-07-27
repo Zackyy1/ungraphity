@@ -28,13 +28,13 @@ export default async function RootLayout({
     <html lang="en" className={`${GeistSans.variable}`}>
       <body
         className={cn(
-          "min-h-screen bg-background font-sans antialiased",
+          "min-h-screen font-sans antialiased",
           fontSans.variable,
         )}
       >
         <TRPCReactProvider>
           <Header />
-          <main className="mx-auto bg-card p-4 md:max-w-[1024px] md:p-12">
+          <main className="mx-auto p-4 md:max-w-[1024px] md:p-12">
             {children}
           </main>
           {session?.user && <Menu />}
