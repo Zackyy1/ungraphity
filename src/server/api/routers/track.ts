@@ -16,12 +16,20 @@ export const trackRouter = createTRPCRouter({
     }),
 
   create: protectedProcedure
-    .input(z.object({ name: z.string().min(1) }))
+    .input(
+      z.object({
+        name: z.string().min(1).max(255),
+        color: z.string().min(1).max(7),
+        icon: z.string().min(1).max(2),
+      }),
+    )
     .mutation(async ({ ctx, input }) => {
-      return ctx.db.post.create({
+      return ctx.db.trackable.create({
         data: {
           name: input.name,
-          createdBy: { connect: { id: ctx.session.user.id } },
+          user: { connect: { id: ctx.session.user.id } },
+          icon: input.icon,
+          color: input.color,
         },
       });
     }),

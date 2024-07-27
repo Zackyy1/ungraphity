@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import clsx from "clsx";
 import React, { type ReactNode } from "react";
 
 type HeadingElement = "h1" | "h2";
@@ -22,7 +23,7 @@ export const Heading = ({
   };
 
   return (
-    <Element className={cn(className, classes[Element])}>
+    <Element className={clsx(className, classes[Element], "w-full")}>
       {children ?? text}
     </Element>
   );

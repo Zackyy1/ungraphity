@@ -6,6 +6,9 @@ import { type Metadata } from "next";
 
 import { TRPCReactProvider } from "@/trpc/react";
 import { cn } from "@/lib/utils";
+import { Header } from "@/components/ui/header/header";
+import { getServerAuthSession } from "@/server/auth";
+import { Menu } from "@/components/ui/navigation/menu/menu";
 
 export const metadata: Metadata = {
   title: "Create T3 App",
@@ -16,18 +19,26 @@ const fontSans = FontSans({
   subsets: ["latin"],
   variable: "--font-sans",
 });
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  const session = await getServerAuthSession();
+
   return (
     <html lang="en" className={`${GeistSans.variable}`}>
       <body
         className={cn(
-          "bg-background min-h-screen font-sans antialiased",
+          "min-h-screen bg-background font-sans antialiased",
           fontSans.variable,
         )}
       >
-        <TRPCReactProvider>{children}</TRPCReactProvider>
+        <TRPCReactProvider>
+          <Header />
+          <main className="mx-auto bg-card p-4 md:max-w-[1024px] md:p-12">
+            {children}
+          </main>
+          {session?.user && <Menu />}
+        </TRPCReactProvider>
       </body>
     </html>
   );
