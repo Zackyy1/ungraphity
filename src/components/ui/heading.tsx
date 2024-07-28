@@ -1,5 +1,4 @@
 import { cn } from "@/lib/utils";
-import clsx from "clsx";
 import React, { type ReactNode } from "react";
 
 type HeadingElement = "h1" | "h2";
@@ -9,6 +8,7 @@ interface HeadingProps {
   className?: string;
   text?: string;
   children?: ReactNode;
+  style?: React.CSSProperties;
 }
 
 export const Heading = ({
@@ -16,14 +16,18 @@ export const Heading = ({
   className,
   children,
   text,
+  style,
 }: HeadingProps) => {
   const classes: Record<HeadingElement, string> = {
     h1: "scroll-m-20 text-4xl font-extrabold tracking-tight lg:text-5xl",
-    h2: "scroll-m-20 pb-2 text-3xl font-semibold tracking-tight first:mt-0",
+    h2: "scroll-m-20 text-3xl font-semibold tracking-tight first:mt-0",
   };
 
   return (
-    <Element className={clsx(className, classes[Element], "w-full")}>
+    <Element
+      style={style}
+      className={cn(classes[Element], "w-full", className)}
+    >
       {children ?? text}
     </Element>
   );
