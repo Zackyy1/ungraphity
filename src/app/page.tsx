@@ -1,7 +1,6 @@
 import Link from "next/link";
 
 import { getServerAuthSession } from "@/server/auth";
-import { HydrateClient } from "@/trpc/server";
 import { Heading } from "@/components/ui/heading";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";

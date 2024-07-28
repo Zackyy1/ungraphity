@@ -10,6 +10,7 @@ import { Heading } from "../ui/heading";
 import { api } from "@/trpc/react";
 import { PuffLoader } from "react-spinners";
 import { Button } from "../ui/button";
+import { Separator } from "../ui/separator";
 
 export const TrackableList = () => {
   const {
@@ -35,7 +36,7 @@ export const TrackableList = () => {
 
   return (
     <>
-      <Heading className="text-center">Your trackables</Heading>
+      <Heading element="h2">Your trackables</Heading>
 
       {trackables.map((trackable) => (
         <div key={trackable.id} className="flex flex-row items-center">
@@ -61,6 +62,8 @@ export const TrackableList = () => {
           <DeleteTrackableButton onDelete={() => refetch()} id={trackable.id} />
         </div>
       ))}
+      <Separator />
+
       <Button size={"lg"} tabIndex={-1} className="mx-auto mt-4 flex px-0">
         <Link
           href="/tracker/create"

@@ -35,7 +35,6 @@ export const trackRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-
       // Check if user is the owner of this trackable
       const trackable = await ctx.db.trackable.findUnique({
         where: {
@@ -47,6 +46,28 @@ export const trackRouter = createTRPCRouter({
       }
 
       return await ctx.db.trackable.delete({
+        where: {
+          id: input.id,
+        },
+      });
+    }),
+  getTrackableById: protectedProcedure
+    .input(
+      z.object({
+        id: z.string(),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      // Check if user is the owner of this trackable
+      const trackable = await ctx.db.trackable.findUnique({
+        where: {
+          id: input.id,
+        },
+      });
+      if (!trackable || trackable.userId !== ctx.session.user.id) {
+        throw new Error("Trackable not found");
+      }
+      return await ctx.db.trackable.findUnique({
         where: {
           id: input.id,
         },
