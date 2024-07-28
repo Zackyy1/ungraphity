@@ -3,7 +3,7 @@
 import Link from "next/link";
 import React, { type ElementType } from "react";
 import { BarChartIcon, HomeIcon, ViewHorizontalIcon } from "@radix-ui/react-icons";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 type MenuLinkProps = {

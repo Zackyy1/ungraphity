@@ -4,7 +4,7 @@ import { type Trackable } from "@prisma/client";
 import { BackButtonHeading } from "../ui/backButtonHeading";
 
 export const TrackableDetailView = (props: Trackable) => {
-  const { name, id } = props;
+  const { name } = props;
 
   return (
     <div>

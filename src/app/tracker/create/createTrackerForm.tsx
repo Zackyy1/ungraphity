@@ -10,7 +10,6 @@ import {
   FormMessage,
   Form,
 } from "@/components/ui/form";
-import { Heading } from "@/components/ui/heading";
 import { Input } from "@/components/ui/input";
 import { type FieldValues, type SubmitHandler, useForm } from "react-hook-form";
 import { CirclePicker, type ColorResult } from "react-color";

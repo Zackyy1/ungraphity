@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { api } from "@/trpc/react";
 import { useRouter } from "next/navigation";
