@@ -1,12 +1,16 @@
-'use client';
+"use client";
 
 import { useState } from "react";
 
 import { api } from "@/trpc/react";
 import { toast } from "sonner";
+import { usePathname, useRouter } from "next/navigation";
 
-export const useDeleteTrackable = ({ callback }: { callback: () => void }) => {
+export const useDeleteTrackable = (callback?: () => void) => {
   const apiUtils = api.useUtils();
+
+  const pathname = usePathname();
+  const router = useRouter();
 
   const [promiseResolver, setPromiseResolver] =
     useState<(value?: unknown) => void>();
@@ -34,10 +38,14 @@ export const useDeleteTrackable = ({ callback }: { callback: () => void }) => {
       if (callback) {
         callback();
       }
+
+      if (pathname.split('/').length > 2) {
+        router.push('/tracker');
+      }
     },
   });
 
-  const deleteTrackable = async (id: string) => {
+  const deleteTrackable = (id: string) => {
     deleteTrackableMutation.mutate({ id });
   };
 

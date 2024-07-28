@@ -62,3 +62,7 @@ body {
     --chart-5: 340 75% 55%;
   }
 }
+
+.dropdown-menu > div[role=menuitem] {
+  cursor: pointer;
+}
