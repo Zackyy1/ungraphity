@@ -12,7 +12,7 @@ export const DeleteTrackableButton = ({
   id,
   onDelete,
 }: DeleteTrackableButtonProps) => {
-  const deleteTrackable = useDeleteTrackable({ callback: onDelete });
+  const deleteTrackable = useDeleteTrackable(onDelete);
 
   return (
     <button onClick={() => deleteTrackable(id)} className="z-10">
