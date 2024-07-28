@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/form";
 import { Heading } from "@/components/ui/heading";
 import { Input } from "@/components/ui/input";
-import { useForm } from "react-hook-form";
+import { type FieldValues, type SubmitHandler, useForm } from "react-hook-form";
 import { CirclePicker, type ColorResult } from "react-color";
 import {
   Popover,
@@ -20,38 +20,73 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { useState } from "react";
-import { api } from "@/trpc/react";
-import { useRouter } from "next/navigation";
+import {
+  useCreateTrackable,
+  type UseCreateTrackableData,
+} from "@/hooks/useCreateTrackable";
+import fontColorContrast from "font-color-contrast";
+import { z } from "zod";
+import { BackButtonHeading } from "@/components/ui/backButtonHeading";
 
 export const CreateTrackerForm = () => {
   const form = useForm();
   const [colorPickerOpen, setColorPickerOpen] = useState(false);
-  const router = useRouter();
+  const createTrackable = useCreateTrackable();
 
-  const db = api.track.create.useMutation({
-    onSuccess: async (data) => {
-      router.push("/tracker/" + data.id);
-    },
-  });
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const [chosenColor, setChosenColor] = useState<ColorResult>({
     hex: "#f44336",
     hsl: { h: 0, s: 1, l: 0.5 },
     rgb: { r: 244, g: 67, b: 54 },
   });
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const onSubmit = (data: any) => {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-    db.mutate({ name: data.name, color: chosenColor.hex, icon: data.icon });
+  const formSchema = z.object({
+    name: z
+      .string()
+      .min(1, {
+        message: "Name must be at least 1 character.",
+      })
+      .max(64, {
+        message: "Name must be at most 64 characters.",
+      }),
+    color: z
+      .string()
+      .min(1, {
+        message: "Color must be at least 1 character, matching hex code.",
+      })
+      .max(7, {
+        message: "Color must be at most 7 characters, matching hex code.",
+      }),
+    icon: z
+      .string()
+      .min(1, {
+        message: "Icon must be at least 1 character.",
+      })
+      .max(2, {
+        message: "Icon must be at most 2 characters.",
+      })
+      .optional(),
+  });
+
+  const onSubmit: SubmitHandler<UseCreateTrackableData> = (
+    data: z.infer<typeof formSchema>,
+  ) => {
+    createTrackable({
+      name: data.name,
+      color: chosenColor.hex,
+      icon: data.icon ?? "",
+    });
   };
 
   return (
-    <div className="mt-8 flex flex-col items-center">
-      <Heading className="mb-6 text-center">Create a new trackable</Heading>
+    <div className="flex flex-col">
+      <BackButtonHeading
+        headingProps={{
+          text: "Create a new trackable",
+        }}
+      />
       <Form {...form}>
         <form
-          onSubmit={form.handleSubmit(onSubmit)}
+          onSubmit={form.handleSubmit(onSubmit as SubmitHandler<FieldValues>)}
           className="w-full space-y-8 lg:max-w-80"
         >
           <FormField
@@ -62,6 +97,9 @@ export const CreateTrackerForm = () => {
                 <FormLabel>Trackable name</FormLabel>
                 <FormControl>
                   <Input
+                    minLength={1}
+                    maxLength={64}
+                    required
                     placeholder="Weight, coffee, cigarettes smoked..."
                     {...field}
                   />
@@ -74,6 +112,21 @@ export const CreateTrackerForm = () => {
               </FormItem>
             )}
           />
+
+          <FormField
+            control={form.control}
+            name="icon"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="block">Icon (Use Emoji)</FormLabel>
+                <FormControl>
+                  <Input maxLength={2} {...field} placeholder="🚬, ☕, 💪..." />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
           <FormField
             control={form.control}
             name="color"
@@ -87,11 +140,12 @@ export const CreateTrackerForm = () => {
                       onClick={() => setColorPickerOpen(!colorPickerOpen)}
                     >
                       <Button
-                        // onClick={() => setColorPickerOpen(!colorPickerOpen)}
                         className="block"
                         type="button"
-                        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-                        style={{ backgroundColor: chosenColor.hex }}
+                        style={{
+                          backgroundColor: chosenColor.hex,
+                          color: fontColorContrast(chosenColor.hex),
+                        }}
                       >
                         Open color picker
                       </Button>
@@ -110,19 +164,7 @@ export const CreateTrackerForm = () => {
               </FormItem>
             )}
           />
-          <FormField
-            control={form.control}
-            name="icon"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="block">Icon (Use Emoji)</FormLabel>
-                <FormControl>
-                  <Input maxLength={2} {...field} placeholder="🚬, ☕, 💪..." />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+
           <Button type="submit" className="w-full">
             Create
           </Button>
@@ -130,4 +172,4 @@ export const CreateTrackerForm = () => {
       </Form>
     </div>
   );
-}
+};
