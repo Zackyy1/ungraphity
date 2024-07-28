@@ -22,6 +22,26 @@ export default async function TrackerDefaultPage() {
     </Heading>
   );
 
+  const listTrackables = () =>
+    trackables.map((trackable) => (
+      <div key={trackable.id}>
+        <Link
+          href={`/tracker/${trackable.id}`}
+          className="flex w-full transform flex-row justify-between rounded-lg p-2 font-normal transition-opacity duration-200 ease-in-out hover:opacity-95"
+          style={{
+            backgroundColor: trackable.color,
+            color: fontColorContrast(trackable.color),
+          }}
+        >
+          <Heading element="h2" className="space-x-1 p-0 text-2xl font-normal">
+            <span className="inline">{trackable.icon}</span>
+            <span>{trackable.name}</span>
+          </Heading>
+          <ArrowRightIcon className="h-full w-8" />
+        </Link>
+      </div>
+    ));
+
   return (
     <HydrateClient>
       <div className="flex h-screen flex-col items-center">
@@ -30,27 +50,7 @@ export default async function TrackerDefaultPage() {
         ) : (
           <div className="w-full space-y-4">
             <Heading className="text-center">Your trackables</Heading>
-            {trackables.map((trackable) => (
-              <div key={trackable.id}>
-                <Link
-                  href={`/tracker/${trackable.id}`}
-                  className="flex w-full transform flex-row justify-between rounded-lg p-2 font-normal transition-opacity duration-200 ease-in-out hover:opacity-95"
-                  style={{
-                    backgroundColor: trackable.color,
-                    color: fontColorContrast(trackable.color),
-                  }}
-                >
-                  <Heading
-                    element="h2"
-                    className="space-x-1 p-0 text-2xl font-normal"
-                  >
-                    <span className="inline">{trackable.icon}</span>
-                    <span>{trackable.name}</span>
-                  </Heading>
-                  <ArrowRightIcon className="h-full w-8" />
-                </Link>
-              </div>
-            ))}
+            {listTrackables()}
           </div>
         )}
         <Link href="/tracker/create">
