@@ -87,7 +87,7 @@ export const CreateTrackerForm = () => {
       <Form {...form}>
         <form
           onSubmit={form.handleSubmit(onSubmit as SubmitHandler<FieldValues>)}
-          className="w-full space-y-8 lg:max-w-80"
+          className="w-full space-y-8"
         >
           <FormField
             control={form.control}
