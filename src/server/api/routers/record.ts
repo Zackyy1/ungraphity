@@ -35,6 +35,8 @@ export const recordRouter = createTRPCRouter({
           trackableId: input.id,
           ...optionals,
         },
+        // sort
+        orderBy: { date: "asc" },
       });
     }),
   create: protectedProcedure
