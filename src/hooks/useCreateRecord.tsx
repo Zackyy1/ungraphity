@@ -4,6 +4,12 @@ import { api } from "@/trpc/react";
 import { useState } from "react";
 import { toast } from "sonner";
 
+type CreateRecordProps = {
+  trackableId: string;
+  value: number;
+  date: Date;
+};
+
 export const useCreateRecord = (callback?: () => void) => {
   const [promiseResolver, setPromiseResolver] =
     useState<(value?: unknown) => void>();
@@ -45,10 +51,11 @@ export const useCreateRecord = (callback?: () => void) => {
     },
   });
 
-  const createRecord = (trackableId: string, value: number) =>
+  const createRecord = ({ trackableId, value, date }: CreateRecordProps) =>
     recordApi.mutate({
       trackableId,
       value,
+      date,
     });
 
   return createRecord;

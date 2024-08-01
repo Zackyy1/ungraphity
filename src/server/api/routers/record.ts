@@ -8,12 +8,32 @@ export const recordRouter = createTRPCRouter({
     .input(
       z.object({
         id: z.string(),
+        dateRange: z
+          .object({
+            from: z.string(),
+            to: z.string(),
+          })
+          .optional(),
+
+        // Pagination
+        skip: z.number().optional(),
+        take: z.number().optional(),
       }),
     )
     .query(async ({ ctx, input }) => {
+      const optionals = input.dateRange
+        ? {
+            date: {
+              gte: new Date(input.dateRange?.from).toISOString(),
+              lte: new Date(input.dateRange?.to).toISOString(),
+            },
+          }
+        : {};
+
       return await ctx.db.record.findMany({
         where: {
           trackableId: input.id,
+          ...optionals,
         },
       });
     }),
@@ -21,6 +41,7 @@ export const recordRouter = createTRPCRouter({
     .input(
       z.object({
         trackableId: z.string(),
+        date: z.date(),
         value: z
           .number()
           .or(z.string())
@@ -37,6 +58,7 @@ export const recordRouter = createTRPCRouter({
         data: {
           trackable: { connect: { id: input.trackableId } },
           value: Number(input.value),
+          date: input.date,
         },
       });
     }),
