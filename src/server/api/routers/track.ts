@@ -10,6 +10,15 @@ export const trackRouter = createTRPCRouter({
       },
     });
   }),
+  hasTrackables: protectedProcedure.query(async ({ ctx }) => {
+    return (
+      (await ctx.db.trackable.count({
+        where: {
+          userId: ctx.session.user.id,
+        },
+      })) > 0
+    );
+  }),
   create: protectedProcedure
     .input(
       z.object({

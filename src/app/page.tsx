@@ -4,9 +4,12 @@ import { getServerAuthSession } from "@/server/auth";
 import { Heading } from "@/components/ui/heading";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { api } from "@/trpc/server";
 
 export default async function Home() {
   const session = await getServerAuthSession();
+
+  const hasTrackables = await api.track.hasTrackables()
 
   return (
     <>
@@ -27,7 +30,7 @@ export default async function Home() {
         href={!session ? "/api/auth/signin" : "/tracker"}
       >
         <Button className="w-full px-12 py-6 text-lg md:w-auto">
-          {!session ? "Get started" : "Create your first trackable"}
+          {!session ? "Get started" : hasTrackables ? "My trackables" : "Create your first habit"}
         </Button>
       </Link>
     </>
