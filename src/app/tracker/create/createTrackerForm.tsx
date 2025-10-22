@@ -79,6 +79,7 @@ export const CreateTrackerForm = () => {
   return (
     <div className="flex flex-col">
       <BackButtonHeading
+        backButtonProps={{ href: "/tracker" }}
         headingProps={{
           text: "Create a new trackable",
         }}

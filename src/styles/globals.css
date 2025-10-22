@@ -59,6 +59,19 @@ body {
         --preview-chart-3: hsl(var(--chart-3));
         --preview-chart-4: hsl(var(--chart-4));
         --preview-chart-5: hsl(var(--chart-5));
+        /* Scenario Color Palette - Light colors for dark theme */
+        --scenario-color-blue: 210 100% 75%;
+        --scenario-color-cyan: 180 100% 75%;
+        --scenario-color-teal: 165 85% 70%;
+        --scenario-color-green: 135 75% 70%;
+        --scenario-color-lime: 100 75% 70%;
+        --scenario-color-yellow: 50 100% 75%;
+        --scenario-color-orange: 30 100% 70%;
+        --scenario-color-red: 0 85% 75%;
+        --scenario-color-pink: 330 85% 75%;
+        --scenario-color-purple: 280 75% 75%;
+        --scenario-color-indigo: 240 75% 75%;
+        --scenario-color-lavender: 260 65% 75%;
     }
     /* .dark {
         --background: 20 14.3% 4.1%;

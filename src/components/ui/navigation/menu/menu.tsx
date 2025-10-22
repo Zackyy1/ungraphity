@@ -44,14 +44,14 @@ const menu = [
     "aria-label": "Dashboard",
   },
   {
-    href: "/habits",
+    href: "/scenarios",
     icon: ViewHorizontalIcon,
-    "aria-label": "Habits",
+    "aria-label": "Scenarios",
   },
   {
-    href: "/tracker",
+    href: "/graphs",
     icon: BarChartIcon,
-    "aria-label": "Trackers",
+    "aria-label": "Graphs & Charts",
   },
 ];
 

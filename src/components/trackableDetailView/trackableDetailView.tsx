@@ -21,9 +21,19 @@ import { Button } from "../ui/button";
 import { CalendarIcon } from "lucide-react";
 import { Calendar } from "../ui/calendar";
 import { cn } from "@/lib/utils";
+import {
+  calculateAutomaticValue,
+  formatAutomaticValue,
+  calculateStreak,
+} from "@/lib/trackableUtils";
+import { toast } from "sonner";
 
-export const TrackableDetailView = (props: Trackable) => {
-  const { name, id } = props;
+interface TrackableDetailViewProps extends Trackable {
+  backUrl?: string;
+}
+
+export const TrackableDetailView = (props: TrackableDetailViewProps) => {
+  const { name, id, automation, createdAt, period, step, backUrl } = props;
   const defaultDate = useMemo(
     () => ({
       from: addMonths(new Date(), -1),
@@ -33,7 +43,7 @@ export const TrackableDetailView = (props: Trackable) => {
   );
   const [date, setDate] = React.useState<DateRange | undefined>(defaultDate);
 
-  const { data: recordsRaw = [] } = api.record.getRecordsByTrackableId.useQuery(
+  const { data: recordsRaw = [], refetch } = api.record.getRecordsByTrackableId.useQuery(
     {
       id,
       dateRange: date
@@ -46,12 +56,62 @@ export const TrackableDetailView = (props: Trackable) => {
     },
   );
 
+  const createRecord = api.record.create.useMutation({
+    onSuccess: () => {
+      toast.success("Streak broken and reset");
+      refetch();
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to break streak");
+    },
+  });
+
+  // Check if this is an automatic trackable
+  const isAutomatic = automation === "automatic-increment";
+
+  // Calculate automatic value if applicable
+  const automaticValue = useMemo(() => {
+    if (!isAutomatic) return null;
+    
+    // Find the most recent "break" record to use as start date
+    const breakRecord = recordsRaw
+      .filter((r) => r.value === -1) // -1 indicates a streak break
+      .sort((a, b) => new Date(b.recordedAt || b.date || 0).getTime() - new Date(a.recordedAt || a.date || 0).getTime())[0];
+    
+    const startDate = breakRecord ? (breakRecord.recordedAt || breakRecord.date) : null;
+    
+    return calculateAutomaticValue(
+      createdAt,
+      period,
+      step || 1,
+      startDate,
+    );
+  }, [isAutomatic, createdAt, period, step, recordsRaw]);
+
+  const handleBreakStreak = () => {
+    if (!confirm("Are you sure you want to break your streak? This will reset your counter.")) {
+      return;
+    }
+
+    // Create a special record with value -1 to indicate streak break
+    createRecord.mutate({
+      trackableId: id,
+      value: -1,
+      recordedAt: new Date().toISOString(),
+    });
+  };
+
   const records = useMemo(
     () => [
-      ...recordsRaw.map((record) => ({
-        value: record.value,
-        date: `${record.date.getDate()}.${record.date.getMonth() <= 9 ? `0${record.date.getMonth() + 1}` : record.date.getMonth() + 1}`,
-      })),
+      ...recordsRaw
+        .filter((record) => record.value !== -1) // Exclude streak break records from chart
+        .map((record) => {
+          const recordDate = new Date(record.recordedAt || record.date || new Date());
+          return {
+            value: record.value,
+            date: `${recordDate.getDate()}.${recordDate.getMonth() <= 9 ? `0${recordDate.getMonth() + 1}` : recordDate.getMonth() + 1}`,
+          };
+        }),
     ],
     [recordsRaw],
   );
@@ -114,9 +174,36 @@ export const TrackableDetailView = (props: Trackable) => {
     <div>
       <TrackableContextButton trackableId={id} />
       <BackButtonHeading
+        backButtonProps={{ href: backUrl || "/tracker" }}
         headingProps={{ text: name }}
         extraContent={durationSelector()}
       />
+
+      {/* Automatic Value Display */}
+      {isAutomatic && automaticValue !== null && (
+        <div className="mb-6 rounded-lg border-2 p-6" style={{ borderColor: props.color }}>
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-medium text-muted-foreground">
+                Current Streak
+              </h3>
+              <p className="mt-2 text-4xl font-bold" style={{ color: props.color }}>
+                {formatAutomaticValue(automaticValue, period, props.unit)}
+              </p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Auto-calculated since {recordsRaw.find(r => r.value === -1) ? "last break" : "creation"}
+              </p>
+            </div>
+            <Button
+              variant="destructive"
+              onClick={handleBreakStreak}
+              disabled={createRecord.isPending}
+            >
+              {createRecord.isPending ? "Breaking..." : "Break Streak"}
+            </Button>
+          </div>
+        </div>
+      )}
 
       {!!recordsRaw.length ? (
         <ResponsiveContainer width="100%" height={500}>
