@@ -71,7 +71,6 @@ export const trackRouter = createTRPCRouter({
       z.object({
         name: z.string().min(1).max(255),
         description: z.string().max(500).optional(),
-        color: z.string().min(1).max(50),
         icon: z.string().min(0).max(2).optional(),
         scenarioId: z.string().optional(),
         type: z.nativeEnum(TrackableType),
@@ -89,12 +88,24 @@ export const trackRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       try {
+        // Get scenario color if scenarioId is provided
+        let scenarioColor = "gray-500"; // default fallback color
+        if (input.scenarioId) {
+          const scenario = await ctx.db.scenario.findUnique({
+            where: { id: input.scenarioId },
+            select: { color: true },
+          });
+          if (scenario) {
+            scenarioColor = scenario.color;
+          }
+        }
+
         // Build data object, omitting undefined values
         const data: Record<string, unknown> = {
           name: input.name,
           user: { connect: { id: ctx.session.user.id } },
           icon: input.icon ?? "",
-          color: input.color,
+          color: scenarioColor, // Use scenario color for legacy support
           type: input.type,
           period: input.period,
           visibility: input.visibility,

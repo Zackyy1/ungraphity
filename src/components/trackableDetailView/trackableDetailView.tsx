@@ -5,14 +5,19 @@ import { BackButtonHeading } from "../ui/backButtonHeading";
 import { TrackableContextButton } from "./trackableContextButton/trackableContextButton";
 import { api } from "@/trpc/react";
 import {
+  Area,
+  AreaChart,
   CartesianGrid,
-  LabelList,
   Line,
   LineChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
+  Bar,
+  BarChart,
+  Cell,
+  Legend,
 } from "recharts";
 import { type DateRange } from "react-day-picker";
 import { addDays, addMonths, format } from "date-fns";
@@ -33,7 +38,12 @@ interface TrackableDetailViewProps extends Trackable {
 }
 
 export const TrackableDetailView = (props: TrackableDetailViewProps) => {
-  const { name, id, automation, createdAt, period, step, backUrl } = props;
+  const { name, id, automation, createdAt, period, step, backUrl, scenarioId } = props;
+  
+  // Fetch scenario data to get the color
+  const { data: scenarios = [] } = api.scenario.getMyScenarios.useQuery();
+  const scenario = scenarios.find(s => s.id === scenarioId);
+  const color = scenario?.color || "gray-500"; // fallback color
   const defaultDate = useMemo(
     () => ({
       from: addMonths(new Date(), -1),
@@ -101,20 +111,67 @@ export const TrackableDetailView = (props: TrackableDetailViewProps) => {
     });
   };
 
-  const records = useMemo(
-    () => [
-      ...recordsRaw
-        .filter((record) => record.value !== -1) // Exclude streak break records from chart
-        .map((record) => {
-          const recordDate = new Date(record.recordedAt || record.date || new Date());
-          return {
-            value: record.value,
-            date: `${recordDate.getDate()}.${recordDate.getMonth() <= 9 ? `0${recordDate.getMonth() + 1}` : recordDate.getMonth() + 1}`,
-          };
-        }),
-    ],
-    [recordsRaw],
-  );
+  const records = useMemo(() => {
+    const filteredRecords = recordsRaw.filter((record) => record.value !== -1);
+    
+    // Group records by date for better visualization
+    const groupedRecords = new Map<string, number>();
+    
+    filteredRecords.forEach((record) => {
+      const recordDate = new Date(record.recordedAt || record.date || new Date());
+      const dateKey = recordDate.toISOString().split('T')[0]; // YYYY-MM-DD format
+      const currentValue = groupedRecords.get(dateKey) || 0;
+      groupedRecords.set(dateKey, currentValue + (record.value || 0));
+    });
+
+    // Convert to array and sort by date
+    return Array.from(groupedRecords.entries())
+      .map(([date, value]) => ({
+        date,
+        value,
+        displayDate: format(new Date(date), "MMM dd"),
+        fullDate: format(new Date(date), "MMM dd, yyyy"),
+      }))
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  }, [recordsRaw]);
+
+  // Calculate statistics for better insights
+  const stats = useMemo(() => {
+    if (records.length === 0) return null;
+    
+    const values = records.map(r => r.value);
+    const total = values.reduce((sum, val) => sum + val, 0);
+    const average = total / values.length;
+    const max = Math.max(...values);
+    const min = Math.min(...values);
+    const currentStreak = calculateStreak(recordsRaw, period, props.goal?.target);
+    
+    return {
+      total,
+      average: Math.round(average * 100) / 100,
+      max,
+      min,
+      currentStreak,
+      totalDays: records.length,
+    };
+  }, [records, recordsRaw, period, props.goal]);
+
+  // Custom tooltip component
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      const data = payload[0].payload;
+      return (
+        <div className="rounded-lg border bg-background p-3 shadow-lg">
+          <p className="font-medium">{data.fullDate}</p>
+          <p className="text-sm" style={{ color: `hsl(var(--${color}))` }}>
+            Value: <span className="font-semibold">{data.value}</span>
+            {props.unit && ` ${props.unit}`}
+          </p>
+        </div>
+      );
+    }
+    return null;
+  };
 
   const durationSelector = () => {
     return (
@@ -181,13 +238,13 @@ export const TrackableDetailView = (props: TrackableDetailViewProps) => {
 
       {/* Automatic Value Display */}
       {isAutomatic && automaticValue !== null && (
-        <div className="mb-6 rounded-lg border-2 p-6" style={{ borderColor: props.color }}>
+        <div className="mb-6 rounded-lg border-2 p-6" style={{ borderColor: `hsl(var(--${color}))` }}>
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-sm font-medium text-muted-foreground">
                 Current Streak
               </h3>
-              <p className="mt-2 text-4xl font-bold" style={{ color: props.color }}>
+              <p className="mt-2 text-4xl font-bold" style={{ color: `hsl(var(--${color}))` }}>
                 {formatAutomaticValue(automaticValue, period, props.unit)}
               </p>
               <p className="mt-1 text-sm text-muted-foreground">
@@ -206,42 +263,110 @@ export const TrackableDetailView = (props: TrackableDetailViewProps) => {
       )}
 
       {!!recordsRaw.length ? (
-        <ResponsiveContainer width="100%" height={500}>
-          {/* TODO: make different charts configurable */}
-          <LineChart
-            className="mt-8"
-            width={800}
-            height={500}
-            margin={{
-              top: 16,
-              right: 16,
-              left: -32,
-              bottom: 0,
-            }}
-            data={records}
-          >
-            <CartesianGrid strokeDasharray="" />
-            <XAxis dataKey="date" />
-            <YAxis />
-            <Tooltip />
+        <div className="mt-8 space-y-6">
+          {/* Statistics Cards */}
+          {stats && (
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+              <div className="rounded-lg border bg-card p-4">
+                <p className="text-sm font-medium text-muted-foreground">Total</p>
+                <p className="text-2xl font-bold" style={{ color: `hsl(var(--${color}))` }}>
+                  {stats.total}
+                  {props.unit && <span className="text-sm text-muted-foreground"> {props.unit}</span>}
+                </p>
+              </div>
+              <div className="rounded-lg border bg-card p-4">
+                <p className="text-sm font-medium text-muted-foreground">Average</p>
+                <p className="text-2xl font-bold" style={{ color: `hsl(var(--${color}))` }}>
+                  {stats.average}
+                  {props.unit && <span className="text-sm text-muted-foreground"> {props.unit}</span>}
+                </p>
+              </div>
+              <div className="rounded-lg border bg-card p-4">
+                <p className="text-sm font-medium text-muted-foreground">Best Day</p>
+                <p className="text-2xl font-bold" style={{ color: `hsl(var(--${color}))` }}>
+                  {stats.max}
+                  {props.unit && <span className="text-sm text-muted-foreground"> {props.unit}</span>}
+                </p>
+              </div>
+              <div className="rounded-lg border bg-card p-4">
+                <p className="text-sm font-medium text-muted-foreground">Streak</p>
+                <p className="text-2xl font-bold" style={{ color: `hsl(var(--${color}))` }}>
+                  {stats.currentStreak} 🔥
+                </p>
+              </div>
+            </div>
+          )}
 
-            <Line
-              type="monotone"
-              strokeWidth={4}
-              dataKey="value"
-              stroke={props.color}
-            >
-              <LabelList dataKey="value" position="top" offset={12} />
-            </Line>
-          </LineChart>
-        </ResponsiveContainer>
+          {/* Chart Section */}
+          <div className="rounded-lg border bg-card p-6">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-lg font-semibold">Progress Chart</h3>
+              <div className="text-sm text-muted-foreground">
+                {records.length} {records.length === 1 ? 'day' : 'days'} tracked
+              </div>
+            </div>
+            
+            <ResponsiveContainer width="100%" height={400}>
+              <AreaChart
+                data={records}
+                margin={{
+                  top: 20,
+                  right: 30,
+                  left: 20,
+                  bottom: 20,
+                }}
+              >
+                <defs>
+                  <linearGradient id={`gradient-${color}`} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={`hsl(var(--${color}))`} stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor={`hsl(var(--${color}))`} stopOpacity={0.05}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid 
+                  strokeDasharray="3 3" 
+                  stroke="hsl(var(--muted))" 
+                  opacity={0.3}
+                />
+                <XAxis 
+                  dataKey="displayDate" 
+                  stroke="hsl(var(--muted-foreground))"
+                  fontSize={12}
+                  tickLine={false}
+                  axisLine={false}
+                />
+                <YAxis 
+                  stroke="hsl(var(--muted-foreground))"
+                  fontSize={12}
+                  tickLine={false}
+                  axisLine={false}
+                />
+                <Tooltip content={<CustomTooltip />} />
+                <Area
+                  type="monotone"
+                  dataKey="value"
+                  stroke={`hsl(var(--${color}))`}
+                  strokeWidth={3}
+                  fill={`url(#gradient-${color})`}
+                  dot={{ fill: `hsl(var(--${color}))`, strokeWidth: 2, r: 4 }}
+                  activeDot={{ r: 6, stroke: `hsl(var(--${color}))`, strokeWidth: 2 }}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
       ) : (
-        <div className="mx-auto mt-8 max-w-[500px] text-center text-2xl">
-          <h2 className="mb-2 block text-3xl font-bold text-primary">
-            No records were found!
-          </h2>
-          Try choosing a different period or adding new records using the
-          floating button.
+        <div className="mx-auto mt-8 max-w-[500px] text-center">
+          <div className="rounded-lg border-2 border-dashed border-muted-foreground/25 p-12">
+            <div className="mx-auto mb-4 h-12 w-12 rounded-full bg-muted flex items-center justify-center">
+              <CalendarIcon className="h-6 w-6 text-muted-foreground" />
+            </div>
+            <h2 className="mb-2 text-2xl font-bold text-foreground">
+              No records found
+            </h2>
+            <p className="text-muted-foreground">
+              Start tracking by adding your first record using the + button above.
+            </p>
+          </div>
         </div>
       )}
     </div>

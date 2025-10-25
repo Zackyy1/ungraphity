@@ -13,7 +13,6 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { SCENARIO_COLORS } from "@/lib/scenarioColors";
 import { api } from "@/trpc/react";
 import { toast } from "sonner";
 import { Separator } from "@/components/ui/separator";
@@ -71,7 +70,6 @@ export const CreateTrackableDialog = ({
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [icon, setIcon] = useState("");
-  const [color, setColor] = useState<string>(SCENARIO_COLORS[0]!.value);
   const [type, setType] = useState<TrackableType>(TrackableType.COUNTER);
   const [period, setPeriod] = useState<TrackablePeriod>(TrackablePeriod.DAILY);
   const [visibility, setVisibility] = useState<TrackableVisibility>(
@@ -121,7 +119,6 @@ export const CreateTrackableDialog = ({
     setName("");
     setDescription("");
     setIcon("");
-    setColor(SCENARIO_COLORS[0]!.value);
     setType(TrackableType.COUNTER);
     setPeriod(TrackablePeriod.DAILY);
     setVisibility(TrackableVisibility.DASHBOARD);
@@ -179,7 +176,6 @@ export const CreateTrackableDialog = ({
     const mutationData = {
       name: name.trim(),
       description: description.trim() || undefined,
-      color,
       icon: icon.trim(),
       scenarioId,
       type: type as "COUNTER" | "QUANTITY" | "BOOLEAN" | "COMPOUND",
@@ -255,26 +251,6 @@ export const CreateTrackableDialog = ({
                   />
                 </div>
 
-                <div className="grid gap-2">
-                  <Label>Color</Label>
-                  <div className="grid grid-cols-6 gap-1">
-                    {SCENARIO_COLORS.slice(0, 6).map((c) => (
-                      <button
-                        key={c.value}
-                        type="button"
-                        onClick={() => setColor(c.value)}
-                        className="h-8 w-8 rounded border-2"
-                        style={{
-                          backgroundColor: `hsl(var(--${c.value}))`,
-                          borderColor:
-                            color === c.value
-                              ? "hsl(var(--foreground))"
-                              : "transparent",
-                        }}
-                      />
-                    ))}
-                  </div>
-                </div>
               </div>
             </div>
 
