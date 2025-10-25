@@ -55,7 +55,7 @@ export const useCreateRecord = (callback?: () => void) => {
     recordApi.mutate({
       trackableId,
       value,
-      date,
+      recordedAt: date.toISOString(),
     });
 
   return createRecord;

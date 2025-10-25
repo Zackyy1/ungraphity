@@ -2,7 +2,7 @@ import { getServerAuthSession } from "@/server/auth";
 import { redirect } from "next/navigation";
 import { api } from "@/trpc/server";
 import { Heading } from "@/components/ui/heading";
-import { TrackableCard } from "@/components/trackableList/trackableCard";
+import { GroupedTrackableCards } from "@/components/trackableList/groupedTrackableCards";
 
 export default async function DashboardPage() {
   const session = await getServerAuthSession();
@@ -13,10 +13,20 @@ export default async function DashboardPage() {
 
   const trackables = await api.track.getMyTrackables();
 
-  // Filter for dashboard visibility
-  const dashboardTrackables = trackables.filter(
-    (t) => t.visibility === "DASHBOARD",
-  );
+  // Filter for dashboard visibility and hide-on-fill logic
+  const dashboardTrackables = trackables.filter((t) => {
+    // Must be visible on dashboard
+    if (t.visibility !== "DASHBOARD") return false;
+    
+    // If persistence is HIDE_ON_FILL, check if goal is completed for current period
+    if (t.persistence === "HIDE_ON_FILL" && t.goal) {
+      // For now, we'll implement this logic in the client-side component
+      // since we need to calculate current values based on records
+      return true;
+    }
+    
+    return true;
+  });
 
   return (
     <div className="flex flex-col gap-6">
@@ -32,25 +42,7 @@ export default async function DashboardPage() {
           </p>
         </div>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {dashboardTrackables.map((trackable) => (
-            <TrackableCard
-              key={trackable.id}
-              id={trackable.id}
-              name={trackable.name}
-              icon={trackable.icon}
-              color={trackable.color}
-              type={trackable.type}
-              period={trackable.period}
-              unit={trackable.unit}
-              automation={trackable.automation}
-              step={trackable.step}
-              createdAt={trackable.createdAt}
-              scenarioId={trackable.scenarioId}
-              goal={trackable.goal as never}
-            />
-          ))}
-        </div>
+        <GroupedTrackableCards trackables={dashboardTrackables} />
       )}
     </div>
   );
