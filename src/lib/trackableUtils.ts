@@ -1,4 +1,3 @@
-import { TrackablePeriod } from "@prisma/client";
 
 /**
  * Calculate automatic value for a trackable based on time elapsed
@@ -6,10 +5,10 @@ import { TrackablePeriod } from "@prisma/client";
 export function calculateAutomaticValue(
   createdAt: Date,
   period: string,
-  step: number = 1,
+  step = 1,
   lastBreakDate?: Date | null,
 ): number {
-  const startDate = lastBreakDate || createdAt;
+  const startDate = lastBreakDate ?? createdAt;
   const now = new Date();
   const msElapsed = now.getTime() - new Date(startDate).getTime();
 
@@ -49,8 +48,8 @@ export function calculateStreak(
 
   // Sort records by date descending (most recent first)
   const sortedRecords = [...records].sort((a, b) => {
-    const dateA = a.recordedAt || a.date || new Date(0);
-    const dateB = b.recordedAt || b.date || new Date(0);
+    const dateA = a.recordedAt ?? a.date ?? new Date(0);
+    const dateB = b.recordedAt ?? b.date ?? new Date(0);
     return new Date(dateB).getTime() - new Date(dateA).getTime();
   });
 
@@ -60,17 +59,17 @@ export function calculateStreak(
   // Group records by period
   const periodGroups = new Map<string, number>();
   for (const record of sortedRecords) {
-    const recordDate = new Date(record.recordedAt || record.date || now);
+    const recordDate = new Date(record.recordedAt ?? record.date ?? now);
     const periodKey = getPeriodKey(recordDate, period);
-    const currentValue = periodGroups.get(periodKey) || 0;
-    periodGroups.set(periodKey, currentValue + (record.value || 0));
+    const currentValue = periodGroups.get(periodKey) ?? 0;
+    periodGroups.set(periodKey, currentValue + (record.value ?? 0));
   }
 
   // Check consecutive periods from now backwards
   let checkDate = new Date(now);
   while (true) {
     const periodKey = getPeriodKey(checkDate, period);
-    const periodValue = periodGroups.get(periodKey) || 0;
+    const periodValue = periodGroups.get(periodKey) ?? 0;
 
     if (periodValue >= goalTarget) {
       streak++;

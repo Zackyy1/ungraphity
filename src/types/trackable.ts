@@ -3,9 +3,19 @@ import {
   TrackablePeriod,
   TrackableVisibility,
   TrackablePersistence,
-  GoalKind,
-  GoalDirection,
 } from "@prisma/client";
+
+// Enums that aren't exported by Prisma (used in JSON fields, not as model field types)
+export enum GoalKind {
+  ABSOLUTE = "ABSOLUTE",
+  PER_PERIOD = "PER_PERIOD",
+  STREAK = "STREAK",
+}
+
+export enum GoalDirection {
+  AT_LEAST = "AT_LEAST",
+  AT_MOST = "AT_MOST",
+}
 
 // Goal configuration types
 export interface TrackableGoal {
@@ -24,23 +34,17 @@ export interface TrackableReminder {
 }
 
 // Template types for compound trackables
-export interface CompoundTemplate {
-  [key: string]: unknown; // Flexible structure defined by user
-}
+export type CompoundTemplate = Record<string, unknown>
 
 // Record data types
-export interface CompoundRecordData {
-  [key: string]: unknown; // Flexible structure matching the template
-}
+export type CompoundRecordData = Record<string, unknown>
 
-// Export enums for convenience
+// Export Prisma enums for convenience
 export {
   TrackableType,
   TrackablePeriod,
   TrackableVisibility,
   TrackablePersistence,
-  GoalKind,
-  GoalDirection,
 };
 
 // Helper type for quick adds

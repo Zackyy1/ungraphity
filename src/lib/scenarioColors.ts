@@ -13,5 +13,5 @@ export const SCENARIO_COLORS = [
   { name: "Lavender", value: "scenario-color-lavender" },
 ] as const;
 
-export const DEFAULT_SCENARIO_COLOR = SCENARIO_COLORS[0]!.value;
+export const DEFAULT_SCENARIO_COLOR = SCENARIO_COLORS[0].value;
 

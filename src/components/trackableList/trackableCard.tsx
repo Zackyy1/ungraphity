@@ -3,7 +3,7 @@
 import Link from "next/link";
 import React, { useMemo, useState } from "react";
 import { Heading } from "../ui/heading";
-import { calculateAutomaticValue, formatAutomaticValue, calculateStreak } from "@/lib/trackableUtils";
+import { calculateAutomaticValue, formatAutomaticValue } from "@/lib/trackableUtils";
 import { api } from "@/trpc/react";
 import { Button } from "../ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "../ui/dialog";
@@ -34,14 +34,14 @@ export const TrackableCard = ({
   id,
   name,
   icon,
-  type,
+  type: _type,
   period,
   unit,
   automation,
   step,
   createdAt,
   scenarioId,
-  quickAdds,
+  quickAdds: _quickAdds,
   persistence,
   goal,
 }: TrackableCardProps) => {
@@ -51,7 +51,7 @@ export const TrackableCard = ({
   // Fetch scenario data to get the color
   const { data: scenarios = [] } = api.scenario.getMyScenarios.useQuery();
   const scenario = scenarios.find(s => s.id === scenarioId);
-  const color = scenario?.color || "gray-500"; // fallback color
+  const color = scenario?.color ?? "gray-500"; // fallback color
 
   // Fetch records to calculate current value and progress
   const { data: records = [] } = api.record.getRecordsByTrackableId.useQuery(
@@ -66,42 +66,38 @@ export const TrackableCard = ({
         .filter((r) => r.value === -1)
         .sort(
           (a, b) =>
-            new Date((b as any).recordedAt || (b as any).date || 0).getTime() -
-            new Date((a as any).recordedAt || (a as any).date || 0).getTime(),
+            new Date(b.recordedAt).getTime() -
+            new Date(a.recordedAt).getTime(),
         )[0];
 
       const startDate = breakRecord
-        ? (breakRecord as any).recordedAt || (breakRecord as any).date
+        ? breakRecord.recordedAt
         : null;
 
-      return calculateAutomaticValue(createdAt, period, step || 1, startDate);
+      return calculateAutomaticValue(createdAt, period, step ?? 1, startDate);
     } else {
       // For manual trackables, calculate current period value
       const now = new Date();
       const today = now.toISOString().split('T')[0];
-      
+
       // Get today's records
       const todayRecords = records.filter(record => {
-        const recordDate = (record as any).recordedAt?.toISOString().split('T')[0];
+        const recordDate = record.recordedAt?.toISOString().split('T')[0];
         return recordDate === today;
       });
 
       // Sum up today's values
-      return todayRecords.reduce((sum, record) => sum + (record.value || 0), 0);
+      return todayRecords.reduce((sum, record) => sum + (record.value ?? 0), 0);
     }
   }, [isAutomatic, records, createdAt, period, step]);
 
   const goalProgress = useMemo(() => {
     if (!goal || currentValue === null) return null;
-    
+
     const progress = (currentValue / goal.target) * 100;
     return Math.min(Math.max(progress, 0), 100);
   }, [goal, currentValue]);
 
-  const currentStreak = useMemo(() => {
-    if (!goal || !records.length) return 0;
-    return calculateStreak(records, period, goal.target);
-  }, [records, period, goal]);
 
   // Check if goal is completed for current period
   const isGoalCompleted = useMemo(() => {
@@ -158,7 +154,7 @@ export const TrackableCard = ({
           }}
         />
       )}
-      
+
       <div className="relative p-3">
         <div className="flex items-center justify-between">
           <Link href={href} className="flex-1">
@@ -182,7 +178,7 @@ export const TrackableCard = ({
                 style={{ color: `hsl(var(--${color}))` }}
               >
                 {currentValue !== null ? (
-                  isAutomatic ? 
+                  isAutomatic ?
                     formatAutomaticValue(currentValue, period, unit) :
                     `${currentValue}${unit ? ` ${unit}` : ''}`
                 ) : (

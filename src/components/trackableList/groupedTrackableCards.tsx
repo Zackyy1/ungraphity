@@ -4,27 +4,10 @@ import { useMemo } from "react";
 import { Heading } from "../ui/heading";
 import { TrackableCard } from "./trackableCard";
 import { api } from "@/trpc/react";
+import type { Trackable } from "@prisma/client";
 
 interface GroupedTrackableCardsProps {
-  trackables: Array<{
-    id: string;
-    name: string;
-    icon?: string;
-    type: string;
-    period: string;
-    unit?: string | null;
-    automation?: string | null;
-    step?: number | null;
-    createdAt: Date;
-    scenarioId?: string | null;
-    quickAdds?: number[] | null;
-    persistence?: string | null;
-    goal?: {
-      kind: string;
-      target: number;
-      direction: string;
-    } | null;
-  }>;
+  trackables: Array<Trackable>;
 }
 
 export const GroupedTrackableCards = ({ trackables }: GroupedTrackableCardsProps) => {
@@ -32,16 +15,12 @@ export const GroupedTrackableCards = ({ trackables }: GroupedTrackableCardsProps
   const { data: scenarios = [] } = api.scenario.getMyScenarios.useQuery();
 
   const groupedTrackables = useMemo(() => {
-    const groups: {
-      [key: string]: {
-        [scenarioId: string]: typeof trackables;
-      };
-    } = {};
+    const groups: Record<string, Record<string, typeof trackables>> = {};
 
     // Group by period first, then by scenario
     trackables.forEach((trackable) => {
       const period = trackable.period;
-      const scenarioId = trackable.scenarioId || "no-scenario";
+      const scenarioId = trackable.scenarioId ?? "no-scenario";
 
       if (!groups[period]) {
         groups[period] = {};
@@ -73,13 +52,13 @@ export const GroupedTrackableCards = ({ trackables }: GroupedTrackableCardsProps
   const getScenarioName = (scenarioId: string) => {
     if (scenarioId === "no-scenario") return "No Scenario";
     const scenario = scenarios.find((s) => s.id === scenarioId);
-    return scenario?.name || "Unknown Scenario";
+    return scenario?.name ?? "Unknown Scenario";
   };
 
   const getScenarioColor = (scenarioId: string) => {
     if (scenarioId === "no-scenario") return "gray";
     const scenario = scenarios.find((s) => s.id === scenarioId);
-    return scenario?.color || "gray";
+    return scenario?.color ?? "gray";
   };
 
   const periodOrder = ["DAILY", "WEEKLY", "MONTHLY", "NONE"];
@@ -95,7 +74,7 @@ export const GroupedTrackableCards = ({ trackables }: GroupedTrackableCardsProps
             <Heading element="h2" className="text-2xl font-semibold">
               {getPeriodLabel(period)}
             </Heading>
-            
+
             {Object.entries(periodGroups).map(([scenarioId, scenarioTrackables]) => (
               <div key={scenarioId} className="space-y-3">
                 <div className="flex items-center gap-2">
@@ -109,7 +88,7 @@ export const GroupedTrackableCards = ({ trackables }: GroupedTrackableCardsProps
                     {getScenarioName(scenarioId)}
                   </Heading>
                 </div>
-                
+
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                   {scenarioTrackables.map((trackable) => (
                     <TrackableCard
@@ -124,9 +103,9 @@ export const GroupedTrackableCards = ({ trackables }: GroupedTrackableCardsProps
                       step={trackable.step}
                       createdAt={trackable.createdAt}
                       scenarioId={trackable.scenarioId}
-                      quickAdds={trackable.quickAdds}
+                      quickAdds={trackable.quickAdds as number[] | null}
                       persistence={trackable.persistence}
-                      goal={trackable.goal}
+                      goal={trackable.goal as { kind: string; target: number; direction: string } | null}
                     />
                   ))}
                 </div>

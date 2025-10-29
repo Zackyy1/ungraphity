@@ -17,11 +17,11 @@ import { type SelectSingleEventHandler } from "react-day-picker";
 export function DatePicker(
   props: CalendarProps & { onSelect?: SelectSingleEventHandler },
 ) {
-  const [selected, setSelected] = React.useState<Date>(props.selected);
+  const [selected, setSelected] = React.useState<Date | undefined>(props.selected as Date | undefined);
 
   // Update internal state when prop changes
   React.useEffect(() => {
-    setSelected(props.selected);
+    setSelected(props.selected as unknown as Date | undefined);
   }, [props.selected]);
 
   return (

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React from "react";
 import Link from "next/link";
 import { ArrowRightIcon, TrashIcon } from "@radix-ui/react-icons";
 import { Heading } from "../ui/heading";
@@ -32,10 +32,10 @@ export const TrackableListForScenario = ({
   const deleteTrackable = api.track.delete.useMutation({
     onSuccess: () => {
       toast.success("Trackable deleted successfully!");
-      refetch();
+      void refetch();
     },
     onError: (error) => {
-      toast.error(error.message || "Failed to delete trackable");
+      toast.error(error.message ?? "Failed to delete trackable");
     },
   });
 
@@ -54,7 +54,7 @@ export const TrackableListForScenario = ({
         <p className="text-center text-muted-foreground">
           Create your first trackable for this scenario.
         </p>
-        <CreateTrackableDialog scenarioId={scenarioId} onSuccess={() => refetch()}>
+        <CreateTrackableDialog scenarioId={scenarioId} onSuccess={() => void refetch()}>
           <button
             className="rounded-lg px-6 py-3 font-semibold transition-opacity hover:opacity-90"
             style={{
@@ -103,7 +103,7 @@ export const TrackableListForScenario = ({
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
         <Heading element="h3">Trackables</Heading>
-        <CreateTrackableDialog scenarioId={scenarioId} onSuccess={() => refetch()}>
+        <CreateTrackableDialog scenarioId={scenarioId} onSuccess={() => void refetch()}>
           <Button size="sm">+ Add Trackable</Button>
         </CreateTrackableDialog>
       </div>
@@ -114,7 +114,7 @@ export const TrackableListForScenario = ({
             key={trackable.id}
             className="group flex transform flex-row items-center justify-between gap-2 rounded-lg border-2 p-4 transition-all duration-200"
             style={{
-              borderColor: `hsl(var(--${trackable.color}))`,
+              borderColor: `hsl(var(--${trackable.scenarioColor}))`,
             }}
           >
             <Link
@@ -129,7 +129,7 @@ export const TrackableListForScenario = ({
                   element="h4"
                   className="text-xl font-medium"
                   style={{
-                    color: `hsl(var(--${trackable.color}))`,
+                    color: `hsl(var(--${trackable.scenarioColor}))`,
                   }}
                 >
                   {trackable.name}
@@ -158,7 +158,7 @@ export const TrackableListForScenario = ({
                 period={trackable.period}
                 step={trackable.step}
                 unit={trackable.unit}
-                color={trackable.color}
+                color={trackable.scenarioColor}
               />
             </Link>
 
@@ -167,7 +167,7 @@ export const TrackableListForScenario = ({
                 <ArrowRightIcon
                   className="h-6 w-6 transition-transform group-hover:translate-x-1"
                   style={{
-                    color: `hsl(var(--${trackable.color}))`,
+                    color: `hsl(var(--${trackable.scenarioColor}))`,
                   }}
                 />
               </Link>

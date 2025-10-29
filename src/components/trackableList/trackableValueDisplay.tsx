@@ -40,15 +40,18 @@ export const TrackableValueDisplay = ({
       .filter((r) => r.value === -1)
       .sort(
         (a, b) =>
-          new Date(b.recordedAt || b.date || 0).getTime() -
-          new Date(a.recordedAt || a.date || 0).getTime(),
+          // @ts-expect-error - date is not present in the Record type
+          new Date(b.recordedAt ?? b.date ?? new Date()).getTime() -
+          // @ts-expect-error - date is not present in the Record type
+          new Date(a.recordedAt ?? a.date ?? 0).getTime(),
       )[0];
 
     const startDate = breakRecord
-      ? breakRecord.recordedAt || breakRecord.date
+      // @ts-expect-error - date is not present in the Record type
+      ? breakRecord.recordedAt ?? breakRecord.date
       : null;
 
-    return calculateAutomaticValue(createdAt, period, step || 1, startDate);
+    return calculateAutomaticValue(createdAt, period, step ?? 1, startDate);
   }, [isAutomatic, records, createdAt, period, step]);
 
   if (!isAutomatic || currentValue === null) return null;

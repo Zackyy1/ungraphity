@@ -16,42 +16,13 @@ import { Label } from "@/components/ui/label";
 import { api } from "@/trpc/react";
 import { toast } from "sonner";
 import { Separator } from "@/components/ui/separator";
-
-// Local enum definitions for type safety
-enum TrackableType {
-  COUNTER = "COUNTER",
-  QUANTITY = "QUANTITY",
-  BOOLEAN = "BOOLEAN",
-  COMPOUND = "COMPOUND",
-}
-
-enum TrackablePeriod {
-  DAILY = "DAILY",
-  WEEKLY = "WEEKLY",
-  MONTHLY = "MONTHLY",
-  NONE = "NONE",
-}
-
-enum TrackableVisibility {
-  DASHBOARD = "DASHBOARD",
-  HIDDEN = "HIDDEN",
-}
-
-enum TrackablePersistence {
-  PERSISTENT = "PERSISTENT",
-  HIDE_ON_FILL = "HIDE_ON_FILL",
-}
-
-enum GoalKind {
-  ABSOLUTE = "ABSOLUTE",
-  PER_PERIOD = "PER_PERIOD",
-  STREAK = "STREAK",
-}
-
-enum GoalDirection {
-  AT_LEAST = "AT_LEAST",
-  AT_MOST = "AT_MOST",
-}
+import {
+  TrackableType,
+  TrackablePeriod,
+  TrackableVisibility,
+  TrackablePersistence,
+} from "@prisma/client";
+import { GoalKind, GoalDirection } from "@/types/trackable";
 
 interface CreateTrackableDialogProps {
   scenarioId?: string;
@@ -111,7 +82,7 @@ export const CreateTrackableDialog = ({
       onSuccess?.();
     },
     onError: (error) => {
-      toast.error(error.message || "Failed to create trackable");
+      toast.error(error.message ?? "Failed to create trackable");
     },
   });
 
@@ -191,17 +162,13 @@ export const CreateTrackableDialog = ({
       template: undefined,
     };
 
-    console.log("=== Creating trackable with data ===");
-    console.log(JSON.stringify(mutationData, null, 2));
-    console.log("====================================");
-
     createTrackable.mutate(mutationData);
   };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        {children || <Button>Create Trackable</Button>}
+        {children ?? <Button>Create Trackable</Button>}
       </DialogTrigger>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[600px]">
         <form onSubmit={handleSubmit}>
@@ -327,7 +294,7 @@ export const CreateTrackableDialog = ({
                     {automation === "automatic-increment" && (
                       <p className="text-xs text-muted-foreground">
                         Value will auto-calculate based on time elapsed since creation.
-                        Use "Break Streak" to reset.
+                        Use &quot;Break Streak&quot; to reset.
                       </p>
                     )}
                   </div>

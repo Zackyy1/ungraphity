@@ -2,12 +2,12 @@
 
 import { Avatar, AvatarImage } from '@radix-ui/react-avatar'
 import { Popover, PopoverTrigger, PopoverContent } from '@radix-ui/react-popover'
-import { Session } from 'next-auth'
+import type { Session } from 'next-auth'
 import Link from 'next/link'
-import React, { ReactNode, useState } from 'react'
+import React, { type ReactNode, useState } from 'react'
 
 export const HeaderMenu = ({ session, userInitials }: { session: Session, userInitials?: string }) => {
-    const [isOpen, setIsOpen] = useState(false)
+    const [, setIsOpen] = useState(false)
 
     const HeaderDropdownLink = ({ href, children }: { href: string, children?: ReactNode }) => <Link
         onClick={() => setIsOpen(false)}

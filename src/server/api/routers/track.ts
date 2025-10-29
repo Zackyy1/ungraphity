@@ -47,15 +47,28 @@ export const trackRouter = createTRPCRouter({
       }),
     )
     .query(async ({ ctx, input }) => {
-      return await ctx.db.trackable.findMany({
+      const trackables = await ctx.db.trackable.findMany({
         where: {
           userId: ctx.session.user.id,
           scenarioId: input.scenarioId,
+        },
+        include: {
+          scenario: {
+            select: {
+              color: true,
+            },
+          },
         },
         orderBy: {
           createdAt: "desc",
         },
       });
+
+      // Map the results to include scenarioColor
+      return trackables.map(trackable => ({
+        ...trackable,
+        scenarioColor: trackable.scenario?.color ?? "gray-500",
+      }));
     }),
   hasTrackables: protectedProcedure.query(async ({ ctx }) => {
     return (
@@ -88,24 +101,12 @@ export const trackRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       try {
-        // Get scenario color if scenarioId is provided
-        let scenarioColor = "gray-500"; // default fallback color
-        if (input.scenarioId) {
-          const scenario = await ctx.db.scenario.findUnique({
-            where: { id: input.scenarioId },
-            select: { color: true },
-          });
-          if (scenario) {
-            scenarioColor = scenario.color;
-          }
-        }
-
         // Build data object, omitting undefined values
         const data: Record<string, unknown> = {
           name: input.name,
           user: { connect: { id: ctx.session.user.id } },
           icon: input.icon ?? "",
-          color: scenarioColor, // Use scenario color for legacy support
+          // color: scenarioColor, // Use scenario color for legacy support
           type: input.type,
           period: input.period,
           visibility: input.visibility,

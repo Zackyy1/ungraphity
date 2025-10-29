@@ -41,7 +41,7 @@ export const CreateScenarioDialog = ({
       onSuccess?.();
     },
     onError: (error) => {
-      toast.error(error.message || "Failed to create scenario");
+      toast.error(error.message ?? "Failed to create scenario");
     },
   });
 
@@ -61,7 +61,7 @@ export const CreateScenarioDialog = ({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        {children || <Button>Create Scenario</Button>}
+        {children ?? <Button>Create Scenario</Button>}
       </DialogTrigger>
       <DialogContent className="sm:max-w-[500px]">
         <form onSubmit={handleSubmit}>
@@ -104,7 +104,7 @@ export const CreateScenarioDialog = ({
                   <button
                     key={color.value}
                     type="button"
-                    onClick={() => setSelectedColor(color.value)}
+                    onClick={() => setSelectedColor(color.value as typeof DEFAULT_SCENARIO_COLOR)}
                     className="group relative h-10 w-10 rounded-md border-2 transition-all hover:scale-110"
                     style={{
                       backgroundColor: `hsl(var(--${color.value}))`,
