@@ -50,7 +50,7 @@ export const trackRouter = createTRPCRouter({
       const trackables = await ctx.db.trackable.findMany({
         where: {
           userId: ctx.session.user.id,
-          scenarioId: input.scenariodwId,
+          scenarioId: input.scenarioId,
         },
         include: {
           scenario: {
