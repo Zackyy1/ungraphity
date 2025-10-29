@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "yarn db:push && next build",
+    "build": "pnpm db:push && next build",
     "db:generate": "prisma migrate dev",
     "db:migrate": "prisma migrate deploy",
     "db:push": "prisma db push",
@@ -75,6 +75,5 @@
   },
   "ct3aMetadata": {
     "initVersion": "7.36.2"
-  },
-  "packageManager": "npm@9.6.7"
+  }
 }

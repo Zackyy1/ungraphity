@@ -9,34 +9,61 @@ import {
   FormControl,
   FormMessage,
 } from "../../ui/form";
-import { DialogClose } from "../../ui/dialog";
 import { Input } from "../../ui/input";
-import { useForm, type FieldValues, type SubmitHandler } from "react-hook-form";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useCreateRecord } from "@/hooks/useCreateRecord";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/datePicker";
 
-type CreateRecordFormData = { value: number; date: Date };
+const newRecordSchema = z.object({
+  value: z.number().min(0, "Value must be positive").optional(),
+  date: z.date(),
+});
 
-export const NewRecordForm = ({ trackableId }: { trackableId: string }) => {
-  const form = useForm();
-  const addRecord = useCreateRecord(() => form.reset());
-  const [date, setDate] = React.useState<Date>(new Date());
+type CreateRecordFormData = z.infer<typeof newRecordSchema>;
 
-  const newRecordSchema = z.object({
-    value: z.number(),
-    date: z.date(),
+export const NewRecordForm = ({ trackableId, onSuccess }: { trackableId: string; onSuccess?: () => void }) => {
+  const [valueInput, setValueInput] = React.useState<string>("");
+
+  const form = useForm<CreateRecordFormData>({
+    resolver: zodResolver(newRecordSchema),
+    defaultValues: {
+      value: undefined,
+      date: new Date(),
+    },
   });
 
-  const onSubmit: SubmitHandler<CreateRecordFormData> = (
-    data: z.infer<typeof newRecordSchema>,
-  ) => addRecord({ trackableId, value: data.value, date });
+  // Reset input when component mounts
+  React.useEffect(() => {
+    setValueInput("");
+  }, []);
+
+  const addRecord = useCreateRecord(() => {
+    form.reset();
+    setValueInput("");
+    onSuccess?.();
+  });
+
+  const onSubmit = (data: CreateRecordFormData) => {
+    if (!valueInput.trim()) {
+      form.setError("value", { message: "Please enter a value" });
+      return;
+    }
+
+    const numericValue = Number(valueInput);
+    if (isNaN(numericValue) || numericValue < 0) {
+      form.setError("value", { message: "Please enter a valid positive number" });
+      return;
+    }
+    addRecord({ trackableId, value: numericValue, date: data.date });
+  };
 
   return (
     <Form {...form}>
       <form
-        onSubmit={form.handleSubmit(onSubmit as SubmitHandler<FieldValues>)}
+        onSubmit={form.handleSubmit(onSubmit)}
         className="w-full space-y-4"
       >
         <FormField
@@ -50,24 +77,42 @@ export const NewRecordForm = ({ trackableId }: { trackableId: string }) => {
                   type="number"
                   placeholder="Enter a value"
                   autoFocus
-                  {...field}
+                  value={valueInput}
+                  onChange={(e) => {
+                    setValueInput(e.target.value);
+                    // Update form field for validation
+                    const numericValue = Number(e.target.value);
+                    if (!isNaN(numericValue)) {
+                      field.onChange(numericValue);
+                    }
+                  }}
                 />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
-        <DatePicker
-          mode="single"
-          selected={new Date()}
-          onSelect={(date) => setDate(date ?? new Date())}
-          className="w-full rounded-md border"
+        <FormField
+          control={form.control}
+          name="date"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Date</FormLabel>
+              <FormControl>
+                <DatePicker
+                  mode="single"
+                  selected={field.value}
+                  onSelect={(date) => field.onChange(date ?? new Date())}
+                  className="w-full rounded-md border"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
         />
-        <DialogClose asChild>
-          <Button className="w-full" type="submit" variant="default">
-            Add record
-          </Button>
-        </DialogClose>
+        <Button className="w-full" type="submit" variant="default">
+          Add record
+        </Button>
       </form>
     </Form>
   );

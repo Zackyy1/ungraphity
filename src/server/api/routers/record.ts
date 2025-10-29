@@ -23,7 +23,7 @@ export const recordRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const optionals = input.dateRange
         ? {
-            date: {
+            recordedAt: {
               gte: new Date(input.dateRange?.from).toISOString(),
               lte: new Date(input.dateRange?.to).toISOString(),
             },
@@ -36,31 +36,29 @@ export const recordRouter = createTRPCRouter({
           ...optionals,
         },
         // sort
-        orderBy: { date: "asc" },
+        orderBy: { recordedAt: "asc" },
       });
     }),
   create: protectedProcedure
     .input(
       z.object({
         trackableId: z.string(),
-        date: z.date(),
-        value: z
-          .number()
-          .or(z.string())
-          .transform((v) => {
-            if (typeof v === "string") {
-              return Number(v);
-            }
-            return v;
-          }),
+        value: z.number(),
+        recordedAt: z.string().optional(),
+        data: z.record(z.unknown()).optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      const recordedAt = input.recordedAt ? new Date(input.recordedAt) : new Date();
+      const localDate = recordedAt.toISOString().split('T')[0];
+
       return await ctx.db.record.create({
         data: {
           trackable: { connect: { id: input.trackableId } },
-          value: Number(input.value),
-          date: input.date,
+          value: input.value,
+          recordedAt: recordedAt,
+          localDate: localDate,
+          data: input.data as never,
         },
       });
     }),

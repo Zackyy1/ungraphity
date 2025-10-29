@@ -43,6 +43,7 @@ const config = {
         muted: "hsl(var(--muted))",
         "muted-foreground": "hsl(var(--muted-foreground))",
         accent: "hsl(var(--accent))",
+        "accent-hover": "hsl(var(--accent-hover))",
         "accent-foreground": "hsl(var(--accent-foreground))",
         destructive: "hsl(var(--destructive))",
         "destructive-foreground": "hsl(var(--destructive-foreground))",

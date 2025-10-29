@@ -10,6 +10,7 @@ import { Header } from "@/components/ui/header/header";
 import { getServerAuthSession } from "@/server/auth";
 import { Menu } from "@/components/ui/navigation/menu/menu";
 import { Toaster } from "@/components/ui/sonner";
+
 export const metadata: Metadata = {
   title: "unGraphity",
   description: "Habit visualiser",
@@ -21,13 +22,18 @@ const fontSans = FontSans({
 });
 export default async function RootLayout({
   children,
-}: Readonly<{ children: React.ReactNode }>) {
+}: {
+  children: React.ReactNode;
+}) {
   const session = await getServerAuthSession();
 
   return (
     <html lang="en" className={`${GeistSans.variable}`}>
       <body
-        className={cn("min-h-screen font-sans antialiased", fontSans.variable)}
+        className={cn(
+          "min-h-screen bg-background font-sans text-foreground antialiased",
+          fontSans.variable,
+        )}
       >
         <TRPCReactProvider>
           <Header />

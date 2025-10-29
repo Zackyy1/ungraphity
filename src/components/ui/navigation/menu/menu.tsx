@@ -24,10 +24,10 @@ const MenuLink = ({
   <Link
     aria-label={ariaLabel}
     className={cn(
-      "flex h-full w-full items-center justify-center border border-r-0 transition-colors duration-100 hover:bg-slate-50",
+      "flex h-full w-full items-center justify-center transition-colors duration-100 hover:bg-muted",
       {
-        "bg-slate-100": active,
-        "border-slate-200": active,
+        "bg-accent": active,
+        "hover:bg-accent-hover": active,
       }
     )}
     href={href}
@@ -44,14 +44,14 @@ const menu = [
     "aria-label": "Dashboard",
   },
   {
-    href: "/habits",
+    href: "/scenarios",
     icon: ViewHorizontalIcon,
-    "aria-label": "Habits",
+    "aria-label": "Scenarios",
   },
   {
-    href: "/tracker",
+    href: "/graphs",
     icon: BarChartIcon,
-    "aria-label": "Trackers",
+    "aria-label": "Graphs & Charts",
   },
 ];
 
@@ -59,7 +59,7 @@ export const Menu = () => {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 flex h-12 flex-row bg-card text-black shadow-sm">
+    <nav className="fixed bottom-0 left-0 right-0 flex h-12 flex-row shadow-sm border-t border-t-border">
       {menu.map((item) => (
         <MenuLink
           key={item.href}

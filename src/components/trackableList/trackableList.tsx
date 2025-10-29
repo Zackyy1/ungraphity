@@ -3,7 +3,6 @@
 import React from "react";
 import Link from "next/link";
 
-import fontColorContrast from "font-color-contrast";
 import { ArrowRightIcon } from "@radix-ui/react-icons";
 import { DeleteTrackableButton } from "./deleteTrackableButton";
 import { Heading } from "../ui/heading";
@@ -43,10 +42,10 @@ export const TrackableList = () => {
           <Link
             href={`/tracker/${trackable.id}`}
             className="flex w-full transform flex-row justify-between rounded-lg p-2 font-normal transition-opacity duration-200 ease-in-out hover:opacity-95"
-            style={{
-              backgroundColor: trackable.color,
-              color: fontColorContrast(trackable.color),
-            }}
+          // style={{
+          //   backgroundColor: scenario?.color ?? undefined,
+          //   color: trackable.color ? fontColorContrast(trackable.color) : undefined,
+          // }}
           >
             <Heading
               element="h2"

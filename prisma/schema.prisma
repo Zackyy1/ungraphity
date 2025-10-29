@@ -1,94 +1,176 @@
 generator client {
-    provider = "prisma-client-js"
+  provider = "prisma-client-js"
 }
 
 datasource db {
-    provider = "postgresql"
-    url      = env("DATABASE_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model Scenario {
-    id          String      @id @default(cuid())
-    name        String
-    description String?
-    userId      String
-    user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-    createdAt   DateTime    @default(now())
-    updatedAt   DateTime    @updatedAt
-    color       String
-    icon        String
-    trackables  Trackable[]
+  id          String      @id @default(cuid())
+  name        String
+  description String?
+  userId      String
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  color       String
+  icon        String
+  trackables  Trackable[]
+}
+
+enum TrackableType {
+  COUNTER
+  QUANTITY
+  BOOLEAN
+  COMPOUND
+}
+
+enum TrackablePeriod {
+  DAILY
+  WEEKLY
+  MONTHLY
+  NONE
+}
+
+enum TrackableVisibility {
+  DASHBOARD
+  HIDDEN
+}
+
+enum TrackablePersistence {
+  PERSISTENT
+  HIDE_ON_FILL
+}
+
+enum GoalKind {
+  ABSOLUTE
+  PER_PERIOD
+  STREAK
+}
+
+enum GoalDirection {
+  AT_LEAST
+  AT_MOST
 }
 
 model Trackable {
-    id          String    @id @default(cuid())
-    name        String
-    description String?
-    userId      String
-    user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-    records     Record[]
-    createdAt   DateTime  @default(now())
-    updatedAt   DateTime  @updatedAt
-    color       String
-    icon        String
-    Scenario    Scenario? @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
-    scenarioId  String?
+  id          String    @id @default(cuid())
+  name        String
+  description String?
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  records     Record[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  icon        String
+  scenario    Scenario? @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
+  scenarioId  String?
+
+  // Trackable type and configuration
+  type   TrackableType   @default(COUNTER)
+  unit   String? // For QUANTITY type (e.g., "ml", "kg", "steps")
+  step   Float? // Increment step for counters and quantities
+  period TrackablePeriod @default(DAILY)
+
+  // Goal configuration (stored as JSON)
+  // Structure: { kind: "absolute" | "per-period" | "streak", target: number, direction: "at-least" | "at-most" }
+  goal Json?
+
+  // Quick add values for fast entry (array of numbers)
+  quickAdds Json? // Array of numbers, e.g., [250, 500, 1000]
+
+  // Display and behavior
+  visibility  TrackableVisibility  @default(DASHBOARD)
+  persistence TrackablePersistence @default(PERSISTENT)
+  automation  String? // e.g., "automatic-increment", "manual"
+
+  // Reminder configuration (stored as JSON)
+  // Structure: { schedule: "once-daily" | "multi-daily" | "none", times: string[], muteWhenCompleted: boolean }
+  reminder Json?
+
+  // Template for COMPOUND type (stored as JSON)
+  // Defines the structure of compound records
+  template Json?
+
+  // Computed fields (can be calculated on-the-fly or cached)
+  currentStreak   Int?      @default(0)
+  longestStreak   Int?      @default(0)
+  lastCompletedAt DateTime?
 }
 
 model Record {
-    id          String    @id @default(cuid())
-    value       Float
-    date        DateTime  @default(now())
-    trackableId String
-    trackable   Trackable @relation(fields: [trackableId], references: [id], onDelete: Cascade)
-    createdAt   DateTime  @default(now())
-    updatedAt   DateTime  @updatedAt
+  id String @id @default(cuid())
+
+  // For simple types (COUNTER, QUANTITY, BOOLEAN), value holds the numeric value
+  // For BOOLEAN: 0 = false, 1 = true
+  value Float?
+
+  // For COMPOUND type, data holds the structured JSON
+  // e.g., { sets: [{ exercise: "Bench Press", reps: 10, weight: 80 }], durationSec: 3600 }
+  data Json?
+
+  // Timestamp of the record (when the action occurred)
+  // Store with timezone awareness for proper period calculations
+  recordedAt DateTime @default(now())
+
+  // Derived fields for querying
+  localDate String? // YYYY-MM-DD in user's timezone for period grouping
+
+  trackableId String
+  trackable   Trackable @relation(fields: [trackableId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([trackableId, localDate])
+  @@index([trackableId, recordedAt])
 }
 
 model Session {
-    id           String   @id @default(cuid())
-    sessionToken String   @unique
-    userId       String
-    expires      DateTime
-    user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model User {
-    id            String      @id @default(cuid())
-    name          String?
-    email         String?     @unique
-    emailVerified DateTime?
-    image         String?
-    accounts      Account[]
-    sessions      Session[]
-    Trackable     Trackable[]
-    Scenario      Scenario[]
+  id            String      @id @default(cuid())
+  name          String?
+  email         String?     @unique
+  emailVerified DateTime?
+  image         String?
+  accounts      Account[]
+  sessions      Session[]
+  Trackable     Trackable[]
+  Scenario      Scenario[]
 }
 
 // Necessary for Next auth
 model Account {
-    id                       String  @id @default(cuid())
-    userId                   String
-    type                     String
-    provider                 String
-    providerAccountId        String
-    refresh_token            String? // @db.Text
-    access_token             String? // @db.Text
-    expires_at               Int?
-    token_type               String?
-    scope                    String?
-    id_token                 String? // @db.Text
-    session_state            String?
-    user                     User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-    refresh_token_expires_in Int?
+  id                       String  @id @default(cuid())
+  userId                   String
+  type                     String
+  provider                 String
+  providerAccountId        String
+  refresh_token            String? // @db.Text
+  access_token             String? // @db.Text
+  expires_at               Int?
+  token_type               String?
+  scope                    String?
+  id_token                 String? // @db.Text
+  session_state            String?
+  user                     User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  refresh_token_expires_in Int?
 
-    @@unique([provider, providerAccountId])
+  @@unique([provider, providerAccountId])
 }
 
 model VerificationToken {
-    identifier String
-    token      String   @unique
-    expires    DateTime
+  identifier String
+  token      String   @unique
+  expires    DateTime
 
-    @@unique([identifier, token])
+  @@unique([identifier, token])
 }

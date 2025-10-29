@@ -52,10 +52,13 @@ export const useCreateTrackable = () => {
     },
   });
 
-  const createTrackable = (data: UseCreateTrackableData) => {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
+  const createTrackable = (data: UseCreateTrackableData & {
+    type: "COUNTER" | "QUANTITY" | "BOOLEAN" | "COMPOUND";
+    period: "DAILY" | "WEEKLY" | "MONTHLY" | "NONE";
+    visibility: "DASHBOARD" | "HIDDEN";
+    persistence: "PERSISTENT" | "HIDE_ON_FILL";
+  }) => {
     setTrackableName(data.name);
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
     db.mutate(data);
   };
 

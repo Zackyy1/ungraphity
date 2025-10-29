@@ -1,6 +1,7 @@
 import { trackRouter } from "@/server/api/routers/track";
 import { createCallerFactory, createTRPCRouter } from "@/server/api/trpc";
 import { recordRouter } from "./routers/record";
+import { scenarioRouter } from "./routers/scenario";
 
 /**
  * This is the primary router for your server.
@@ -10,6 +11,7 @@ import { recordRouter } from "./routers/record";
 export const appRouter = createTRPCRouter({
   track: trackRouter,
   record: recordRouter,
+  scenario: scenarioRouter,
 });
 
 // export type definition of API
