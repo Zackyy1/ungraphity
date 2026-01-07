@@ -13,10 +13,12 @@ import { useDeleteTrackable } from "@/hooks/useDeleteTrackable";
 
 export const TrackableContextDeleteDialog = ({
   trackableId,
+  onSuccess,
 }: {
   trackableId: string;
+  onSuccess?: () => void;
 }) => {
-  const deleteTrackable = useDeleteTrackable();
+  const deleteTrackable = useDeleteTrackable(onSuccess);
 
   return (
     <>

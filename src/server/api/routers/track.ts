@@ -122,6 +122,7 @@ export const trackRouter = createTRPCRouter({
         if (input.automation) data.automation = input.automation;
         if (input.reminder) data.reminder = input.reminder;
         if (input.template) data.template = input.template;
+        if (input.chartType) data.chartType = input.chartType;
 
         console.log("Creating trackable with data:", JSON.stringify(data, null, 2));
 
@@ -132,6 +133,94 @@ export const trackRouter = createTRPCRouter({
         console.error("Error creating trackable:", error);
         throw error;
       }
+    }),
+  update: protectedProcedure
+    .input(
+      z.object({
+        id: z.string(),
+        name: z.string().min(1).max(255).optional(),
+        description: z.string().max(500).optional().nullable(),
+        icon: z.string().min(0).max(2).optional(),
+        scenarioId: z.string().optional().nullable(),
+        type: z.nativeEnum(TrackableType).optional(),
+        unit: z.string().max(50).optional().nullable(),
+        step: z.number().positive().optional().nullable(),
+        period: z.nativeEnum(TrackablePeriod).optional(),
+        goal: goalSchema.nullable(),
+        quickAdds: quickAddsSchema.nullable(),
+        visibility: z.nativeEnum(TrackableVisibility).optional(),
+        persistence: z.nativeEnum(TrackablePersistence).optional(),
+        automation: z.string().max(100).optional().nullable(),
+        reminder: reminderSchema.nullable(),
+        template: templateSchema.nullable(),
+        chartType: z.enum(["area", "line", "bar", "composed"]).optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Check if user is the owner of this trackable
+      const trackable = await ctx.db.trackable.findUnique({
+        where: {
+          id: input.id,
+        },
+      });
+      if (!trackable || trackable.userId !== ctx.session.user.id) {
+        throw new Error("Trackable not found");
+      }
+
+      // Get scenario color if scenarioId is provided
+      let scenarioColor = trackable.color || "gray-500";
+      if (input.scenarioId !== undefined) {
+        if (input.scenarioId) {
+          const scenario = await ctx.db.scenario.findUnique({
+            where: { id: input.scenarioId },
+            select: { color: true },
+          });
+          if (scenario) {
+            scenarioColor = scenario.color;
+          }
+        } else {
+          // scenarioId is null, keep existing color
+          scenarioColor = trackable.color || "gray-500";
+        }
+      }
+
+      // Build data object with only provided fields
+      const data: Record<string, unknown> = {};
+
+      if (input.name !== undefined) data.name = input.name;
+      if (input.description !== undefined) data.description = input.description;
+      if (input.icon !== undefined) data.icon = input.icon ?? "";
+      if (input.scenarioId !== undefined) {
+        if (input.scenarioId) {
+          data.scenario = { connect: { id: input.scenarioId } };
+        } else {
+          data.scenario = { disconnect: true };
+        }
+      }
+      if (input.type !== undefined) data.type = input.type;
+      if (input.unit !== undefined) data.unit = input.unit;
+      if (input.step !== undefined) data.step = input.step;
+      if (input.period !== undefined) data.period = input.period;
+      if (input.goal !== undefined) data.goal = input.goal;
+      if (input.quickAdds !== undefined) data.quickAdds = input.quickAdds;
+      if (input.visibility !== undefined) data.visibility = input.visibility;
+      if (input.persistence !== undefined) data.persistence = input.persistence;
+      if (input.automation !== undefined) data.automation = input.automation;
+      if (input.reminder !== undefined) data.reminder = input.reminder;
+      if (input.template !== undefined) data.template = input.template;
+      if (input.chartType !== undefined) data.chartType = input.chartType;
+      
+      // Update color if scenario changed
+      if (input.scenarioId !== undefined) {
+        data.color = scenarioColor;
+      }
+
+      return await ctx.db.trackable.update({
+        where: {
+          id: input.id,
+        },
+        data: data as never,
+      });
     }),
   delete: protectedProcedure
     .input(
@@ -175,6 +264,33 @@ export const trackRouter = createTRPCRouter({
       return await ctx.db.trackable.findUnique({
         where: {
           id: input.id,
+        },
+      });
+    }),
+  updateChartType: protectedProcedure
+    .input(
+      z.object({
+        id: z.string(),
+        chartType: z.enum(["area", "line", "bar", "composed"]),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Check if user is the owner of this trackable
+      const trackable = await ctx.db.trackable.findUnique({
+        where: {
+          id: input.id,
+        },
+      });
+      if (!trackable || trackable.userId !== ctx.session.user.id) {
+        throw new Error("Trackable not found");
+      }
+
+      return await ctx.db.trackable.update({
+        where: {
+          id: input.id,
+        },
+        data: {
+          chartType: input.chartType,
         },
       });
     }),
