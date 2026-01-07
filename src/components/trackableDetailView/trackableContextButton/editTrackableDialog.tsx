@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -9,13 +10,13 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { api } from "@/trpc/react";
 import { toast } from "sonner";
 import { Separator } from "@/components/ui/separator";
+import { type Trackable } from "@prisma/client";
 
 // Local enum definitions for type safety
 enum TrackableType {
@@ -53,18 +54,30 @@ enum GoalDirection {
   AT_MOST = "AT_MOST",
 }
 
-interface CreateTrackableDialogProps {
-  scenarioId?: string;
+interface EditTrackableDialogProps {
+  trackableId: string;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   onSuccess?: () => void;
-  children?: React.ReactNode;
 }
 
-export const CreateTrackableDialog = ({
-  scenarioId,
+export const EditTrackableDialog = ({
+  trackableId,
+  open,
+  onOpenChange,
   onSuccess,
-  children,
-}: CreateTrackableDialogProps) => {
-  const [open, setOpen] = useState(false);
+}: EditTrackableDialogProps) => {
+  const router = useRouter();
+  const utils = api.useUtils();
+
+  // Fetch trackable data
+  const { data: trackable, isLoading } = api.track.getTrackableById.useQuery(
+    { id: trackableId },
+    { enabled: open && !!trackableId }
+  );
+
+  // Fetch scenarios for selection
+  const { data: scenarios = [] } = api.scenario.getMyScenarios.useQuery();
 
   // Basic fields
   const [name, setName] = useState("");
@@ -78,6 +91,7 @@ export const CreateTrackableDialog = ({
   const [persistence, setPersistence] = useState<TrackablePersistence>(
     TrackablePersistence.PERSISTENT,
   );
+  const [selectedScenarioId, setSelectedScenarioId] = useState<string>("");
 
   // Type-specific fields
   const [unit, setUnit] = useState("");
@@ -106,36 +120,79 @@ export const CreateTrackableDialog = ({
   const [reminderTimes, setReminderTimes] = useState("09:00");
   const [muteWhenCompleted, setMuteWhenCompleted] = useState(true);
 
-  const createTrackable = api.track.create.useMutation({
-    onSuccess: () => {
-      toast.success("Trackable created successfully!");
-      resetForm();
-      setOpen(false);
+  // Populate form when trackable data loads
+  useEffect(() => {
+    if (trackable && open) {
+      setName(trackable.name || "");
+      setDescription(trackable.description || "");
+      setIcon(trackable.icon || "");
+      setType((trackable.type as TrackableType) || TrackableType.COUNTER);
+      setPeriod((trackable.period as TrackablePeriod) || TrackablePeriod.DAILY);
+      setVisibility((trackable.visibility as TrackableVisibility) || TrackableVisibility.DASHBOARD);
+      setPersistence((trackable.persistence as TrackablePersistence) || TrackablePersistence.PERSISTENT);
+      setSelectedScenarioId(trackable.scenarioId || "");
+      setUnit(trackable.unit || "");
+      setStep(trackable.step?.toString() || "");
+      setAutomation(trackable.automation || "manual");
+      setChartType((trackable.chartType as "area" | "line" | "bar" | "composed") || "area");
+
+      // Parse goal
+      if (trackable.goal && typeof trackable.goal === "object") {
+        const goal = trackable.goal as { kind?: string; target?: number; direction?: string };
+        if (goal.kind && goal.target) {
+          setHasGoal(true);
+          setGoalKind((goal.kind as GoalKind) || GoalKind.PER_PERIOD);
+          setGoalTarget(goal.target.toString());
+          setGoalDirection((goal.direction as GoalDirection) || GoalDirection.AT_LEAST);
+        }
+      } else {
+        setHasGoal(false);
+        setGoalTarget("");
+      }
+
+      // Parse quickAdds
+      if (trackable.quickAdds && Array.isArray(trackable.quickAdds)) {
+        setQuickAddsInput(trackable.quickAdds.join(", "));
+      } else {
+        setQuickAddsInput("");
+      }
+
+      // Parse reminder
+      if (trackable.reminder && typeof trackable.reminder === "object") {
+        const reminder = trackable.reminder as {
+          schedule?: string;
+          times?: string[];
+          muteWhenCompleted?: boolean;
+        };
+        if (reminder.schedule) {
+          setHasReminder(true);
+          setReminderSchedule((reminder.schedule as "once-daily" | "multi-daily" | "none") || "once-daily");
+          setReminderTimes(reminder.times?.join(", ") || "09:00");
+          setMuteWhenCompleted(reminder.muteWhenCompleted ?? true);
+        }
+      } else {
+        setHasReminder(false);
+        setReminderTimes("09:00");
+      }
+    }
+  }, [trackable, open]);
+
+  const updateTrackable = api.track.update.useMutation({
+    onSuccess: async () => {
+      toast.success("Trackable updated successfully!");
+      // Invalidate relevant queries
+      await utils.track.getTrackableById.invalidate({ id: trackableId });
+      await utils.track.getMyTrackables.invalidate();
+      await utils.track.getTrackablesByScenarioId.invalidate();
+      onOpenChange(false);
       onSuccess?.();
+      // Refresh the page to get updated server-side data
+      router.refresh();
     },
     onError: (error) => {
-      toast.error(error.message || "Failed to create trackable");
+      toast.error(error.message || "Failed to update trackable");
     },
   });
-
-  const resetForm = () => {
-    setName("");
-    setDescription("");
-    setIcon("");
-    setType(TrackableType.COUNTER);
-    setPeriod(TrackablePeriod.DAILY);
-    setVisibility(TrackableVisibility.DASHBOARD);
-    setPersistence(TrackablePersistence.PERSISTENT);
-    setUnit("");
-    setStep("");
-    setAutomation("manual");
-    setHasGoal(false);
-    setGoalTarget("");
-    setQuickAddsInput("");
-    setHasReminder(false);
-    setReminderTimes("09:00");
-    setChartType("area");
-  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -155,7 +212,7 @@ export const CreateTrackableDialog = ({
           .split(",")
           .map((v) => parseFloat(v.trim()))
           .filter((v) => !isNaN(v))
-      : undefined;
+      : null;
 
     const goal =
       hasGoal && goalTarget
@@ -164,7 +221,7 @@ export const CreateTrackableDialog = ({
             target: parseFloat(goalTarget),
             direction: goalDirection as "AT_LEAST" | "AT_MOST",
           }
-        : undefined;
+        : null;
 
     const reminder = hasReminder
       ? {
@@ -175,45 +232,52 @@ export const CreateTrackableDialog = ({
             .filter((t) => t.length > 0),
           muteWhenCompleted,
         }
-      : undefined;
+      : null;
 
     const mutationData = {
+      id: trackableId,
       name: name.trim(),
-      description: description.trim() || undefined,
-      icon: icon.trim(),
-      scenarioId,
+      description: description.trim() || null,
+      icon: icon.trim() || "",
+      scenarioId: selectedScenarioId || null,
       type: type as "COUNTER" | "QUANTITY" | "BOOLEAN" | "COMPOUND",
-      unit: unit.trim() || undefined,
-      step: step ? parseFloat(step) : undefined,
+      unit: unit.trim() || null,
+      step: step ? parseFloat(step) : null,
       period: period as "DAILY" | "WEEKLY" | "MONTHLY" | "NONE",
       goal,
-      quickAdds: quickAdds && quickAdds.length > 0 ? quickAdds : undefined,
+      quickAdds: quickAdds && quickAdds.length > 0 ? quickAdds : null,
       visibility: visibility as "DASHBOARD" | "HIDDEN",
       persistence: persistence as "PERSISTENT" | "HIDE_ON_FILL",
-      automation: automation !== "manual" ? automation : undefined,
+      automation: automation !== "manual" ? automation : null,
       reminder,
-      template: undefined,
+      template: null,
       chartType: chartType || undefined,
     };
 
-    console.log("=== Creating trackable with data ===");
-    console.log(JSON.stringify(mutationData, null, 2));
-    console.log("====================================");
-
-    createTrackable.mutate(mutationData);
+    updateTrackable.mutate(mutationData);
   };
 
+  if (isLoading) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Edit Trackable</DialogTitle>
+            <DialogDescription>Loading trackable data...</DialogDescription>
+          </DialogHeader>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {children || <Button>Create Trackable</Button>}
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[600px]">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>Create New Trackable</DialogTitle>
+            <DialogTitle>Edit Trackable</DialogTitle>
             <DialogDescription>
-              Configure a new item to track. Choose type, goals, and reminders.
+              Update your trackable settings. All fields are optional except name.
             </DialogDescription>
           </DialogHeader>
 
@@ -256,6 +320,22 @@ export const CreateTrackableDialog = ({
                   />
                 </div>
 
+                <div className="grid gap-2">
+                  <Label htmlFor="scenario">Scenario</Label>
+                  <select
+                    id="scenario"
+                    value={selectedScenarioId}
+                    onChange={(e) => setSelectedScenarioId(e.target.value)}
+                    className="rounded-md border border-input bg-background px-3 py-2"
+                  >
+                    <option value="">No Scenario</option>
+                    {scenarios.map((scenario) => (
+                      <option key={scenario.id} value={scenario.id}>
+                        {scenario.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
             </div>
 
@@ -575,12 +655,12 @@ export const CreateTrackableDialog = ({
             <Button
               type="button"
               variant="secondary"
-              onClick={() => setOpen(false)}
+              onClick={() => onOpenChange(false)}
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={createTrackable.isPending}>
-              {createTrackable.isPending ? "Creating..." : "Create Trackable"}
+            <Button type="submit" disabled={updateTrackable.isPending}>
+              {updateTrackable.isPending ? "Updating..." : "Update Trackable"}
             </Button>
           </DialogFooter>
         </form>

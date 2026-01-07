@@ -62,4 +62,57 @@ export const recordRouter = createTRPCRouter({
         },
       });
     }),
+  updateStreakStartDate: protectedProcedure
+    .input(
+      z.object({
+        trackableId: z.string(),
+        startDate: z.string(), // ISO string
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Verify user owns the trackable
+      const trackable = await ctx.db.trackable.findUnique({
+        where: { id: input.trackableId },
+        select: { userId: true },
+      });
+
+      if (!trackable || trackable.userId !== ctx.session.user.id) {
+        throw new Error("Trackable not found");
+      }
+
+      const startDate = new Date(input.startDate);
+      const localDate = startDate.toISOString().split('T')[0];
+
+      // Find the most recent break record (value === -1)
+      const existingBreakRecord = await ctx.db.record.findFirst({
+        where: {
+          trackableId: input.trackableId,
+          value: -1,
+        },
+        orderBy: {
+          recordedAt: 'desc',
+        },
+      });
+
+      if (existingBreakRecord) {
+        // Update existing break record
+        return await ctx.db.record.update({
+          where: { id: existingBreakRecord.id },
+          data: {
+            recordedAt: startDate,
+            localDate: localDate,
+          },
+        });
+      } else {
+        // Create new break record
+        return await ctx.db.record.create({
+          data: {
+            trackable: { connect: { id: input.trackableId } },
+            value: -1,
+            recordedAt: startDate,
+            localDate: localDate,
+          },
+        });
+      }
+    }),
 });

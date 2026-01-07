@@ -94,6 +94,13 @@ export const TrackableCard = ({
   const goalProgress = useMemo(() => {
     if (!goal || currentValue === null) return null;
     
+    // For AT_MOST, progress is inverted (100% when at 0, 0% when at target)
+    if (goal.direction === "AT_MOST") {
+      const progress = ((goal.target - currentValue) / goal.target) * 100;
+      return Math.min(Math.max(progress, 0), 100);
+    }
+    
+    // For AT_LEAST, normal progress
     const progress = (currentValue / goal.target) * 100;
     return Math.min(Math.max(progress, 0), 100);
   }, [goal, currentValue]);
@@ -103,28 +110,35 @@ export const TrackableCard = ({
     return calculateStreak(records, period, goal.target);
   }, [records, period, goal]);
 
-  // Check if goal is completed for current period
+  // Check if goal is completed for current period based on direction
   const isGoalCompleted = useMemo(() => {
     if (!goal || currentValue === null) return false;
+    
+    if (goal.direction === "AT_LEAST") {
+      return currentValue >= goal.target;
+    } else if (goal.direction === "AT_MOST") {
+      return currentValue <= goal.target;
+    }
+    
+    // Default to AT_LEAST behavior
     return currentValue >= goal.target;
+  }, [goal, currentValue]);
+
+  // Check if goal is exceeded (for AT_MOST direction)
+  const isGoalExceeded = useMemo(() => {
+    if (!goal || currentValue === null) return false;
+    
+    if (goal.direction === "AT_MOST") {
+      return currentValue > goal.target;
+    }
+    
+    return false;
   }, [goal, currentValue]);
 
   // Check if this card should be hidden (hide-on-fill + goal completed)
   const shouldHide = useMemo(() => {
     return persistence === "HIDE_ON_FILL" && isGoalCompleted;
   }, [persistence, isGoalCompleted]);
-
-  // Animation state for completion
-  const [showCompletionAnimation, setShowCompletionAnimation] = useState(false);
-
-  // Trigger completion animation when goal is completed
-  React.useEffect(() => {
-    if (isGoalCompleted && !showCompletionAnimation) {
-      setShowCompletionAnimation(true);
-      // Hide the animation after 2 seconds
-      setTimeout(() => setShowCompletionAnimation(false), 2000);
-    }
-  }, [isGoalCompleted, showCompletionAnimation]);
 
   // Don't render if should be hidden
   if (shouldHide) {
@@ -139,14 +153,14 @@ export const TrackableCard = ({
         borderColor: `hsl(var(--${color}))`,
       }}
     >
-      {/* Completion Animation */}
-      {showCompletionAnimation && (
-        <div className="absolute inset-0 z-10 flex items-center justify-center bg-green-500/20 backdrop-blur-sm">
-          <div className="flex flex-col items-center gap-2">
-            <div className="text-4xl animate-bounce">🎉</div>
-            <div className="text-lg font-bold text-green-600">Goal Completed!</div>
-          </div>
-        </div>
+      {/* Inner shadow for goal completion */}
+      {isGoalCompleted && goal?.direction === "AT_LEAST" && (
+        <div className="absolute inset-0 rounded-lg shadow-[inset_0_0_20px_rgba(34,197,94,0.3)] pointer-events-none" />
+      )}
+      
+      {/* Inner shadow for goal exceeded (AT_MOST) */}
+      {isGoalExceeded && goal?.direction === "AT_MOST" && (
+        <div className="absolute inset-0 rounded-lg shadow-[inset_0_0_20px_rgba(239,68,68,0.3)] pointer-events-none" />
       )}
 
       {/* Background fill based on goal progress - covers entire card height */}

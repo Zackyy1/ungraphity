@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import React, { type ElementType } from "react";
-import { BarChartIcon, HomeIcon, ViewHorizontalIcon } from "@radix-ui/react-icons";
+import { HomeIcon, ListBulletIcon } from "@radix-ui/react-icons";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
@@ -44,14 +44,9 @@ const menu = [
     "aria-label": "Dashboard",
   },
   {
-    href: "/scenarios",
-    icon: ViewHorizontalIcon,
-    "aria-label": "Scenarios",
-  },
-  {
-    href: "/graphs",
-    icon: BarChartIcon,
-    "aria-label": "Graphs & Charts",
+    href: "/tracker",
+    icon: ListBulletIcon,
+    "aria-label": "Trackables",
   },
 ];
 

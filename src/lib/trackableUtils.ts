@@ -135,3 +135,42 @@ export function formatAutomaticValue(
   return `${value} ${periodLabel}`;
 }
 
+/**
+ * Round a number to the nearest step value to avoid floating point precision issues
+ */
+export function roundToStep(value: number, step: number | null | undefined): number {
+  if (!step || step <= 0) {
+    // If no step specified, round to reasonable precision
+    return Math.round(value * 100) / 100;
+  }
+  
+  // Round to nearest step, then fix floating point precision
+  const rounded = Math.round(value / step) * step;
+  
+  // Determine decimal places from step (e.g., 0.01 -> 2, 0.1 -> 1, 1 -> 0)
+  const stepStr = step.toString();
+  const decimalPlaces = stepStr.includes('.') ? stepStr.split('.')[1].length : 0;
+  
+  // Use toFixed and parseFloat to eliminate floating point errors
+  return parseFloat(rounded.toFixed(decimalPlaces));
+}
+
+/**
+ * Format a number for display, ensuring proper decimal precision
+ */
+export function formatNumberForDisplay(value: number, step: number | null | undefined): string {
+  const rounded = roundToStep(value, step);
+  
+  if (!step || step <= 0) {
+    // Default to 2 decimal places if no step
+    return rounded.toFixed(2).replace(/\.?0+$/, '');
+  }
+  
+  // Determine decimal places from step
+  const stepStr = step.toString();
+  const decimalPlaces = stepStr.includes('.') ? stepStr.split('.')[1].length : 0;
+  
+  // Format with appropriate decimal places, removing trailing zeros
+  return rounded.toFixed(decimalPlaces).replace(/\.?0+$/, '');
+}
+

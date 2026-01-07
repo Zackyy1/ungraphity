@@ -73,6 +73,7 @@ model Trackable {
   unit   String? // For QUANTITY type (e.g., "ml", "kg", "steps")
   step   Float? // Increment step for counters and quantities
   period TrackablePeriod @default(DAILY)
+  color  String? @default("#ffffff")
 
   // Goal configuration (stored as JSON)
   // Structure: { kind: "absolute" | "per-period" | "streak", target: number, direction: "at-least" | "at-most" }
@@ -85,6 +86,7 @@ model Trackable {
   visibility  TrackableVisibility  @default(DASHBOARD)
   persistence TrackablePersistence @default(PERSISTENT)
   automation  String? // e.g., "automatic-increment", "manual"
+  chartType   String?              @default("area") // e.g., "area", "line", "bar", "composed"
 
   // Reminder configuration (stored as JSON)
   // Structure: { schedule: "once-daily" | "multi-daily" | "none", times: string[], muteWhenCompleted: boolean }
